@@ -80,6 +80,27 @@ class TranslateEncsDepSmall(translate.TranslateProblem):
                     }
         return {"targets": encoder}
 
+    def example_reading_spec(self):
+        data_fields = {
+            "targets": tf.VarLenFeature(tf.int64)
+        }
+        if self.has_inputs:
+            data_fields["inputs"] = tf.VarLenFeature(tf.int64)
+            data_fields["pos"] = tf.VarLenFeature(tf.int64)
+            data_fields["gov"] = tf.VarLenFeature(tf.int64)
+            data_fields["depth"] = tf.VarLenFeature(tf.int64)
+            data_fields["sib_ord"] = tf.VarLenFeature(tf.int64)
+
+        if self.packed_length:
+            if self.has_inputs:
+                data_fields["inputs_segmentation"] = tf.VarLenFeature(tf.int64)
+                data_fields["inputs_position"] = tf.VarLenFeature(tf.int64)
+            data_fields["targets_segmentation"] = tf.VarLenFeature(tf.int64)
+            data_fields["targets_position"] = tf.VarLenFeature(tf.int64)
+
+        data_items_to_decoders = None
+        return data_fields, data_items_to_decoders
+
     def hparams(self, defaults, unused_model_hparams):
         p = defaults
         p.stop_at_eos = int(True)
@@ -89,9 +110,9 @@ class TranslateEncsDepSmall(translate.TranslateProblem):
             p.input_modality = {
                     "inputs": (registry.Modalities.SYMBOL, source_vocab_size),
                     "pos": (registry.Modalities.SYMBOL, 100),
-                    "gov": (registry.Modalities.SYMBOL, 100),
-                    "depth": (registry.Modalities.SYMBOL, 100),
-                    "sib_ord": (registry.Modalities.SYMBOL, 100)
+                    "gov": (registry.Modalities.SYMBOL, 99),
+                    "depth": (registry.Modalities.SYMBOL, 98),
+                    "sib_ord": (registry.Modalities.SYMBOL, 97)
             }
         target_vocab_size = self._encoders["targets"].vocab_size
         p.target_modality = (registry.Modalities.SYMBOL, target_vocab_size)
@@ -179,13 +200,14 @@ class DepSibEncoder:
         return source_pos["sib_ord"]
 
 
-def dep_tokenizer(sentence, ints):
+def dep_tokenizer(sentence, ints, eos_list=None):
     """Returns positions in dependency parse
     :param
         sentence: string in czeng export format
             "He|he|PRP|1|2|Sb saved|save|VBD|2|0|Pred my|my|PRP$|3|4|Atr ever-lovin|ever-lovin|NN|4|6|Atr
             '|'|''|5|6|AuxG neck|neck|NN|6|2|Obj .|.|.|7|0|AuxK"
         ints: list of list of ints
+        eos_list
     :return:
         dep_pos: dict   {"pos": [],     position in sentence
                         "gov": [],      index of gonvernor
@@ -220,7 +242,7 @@ def dep_tokenizer(sentence, ints):
     def replicate(arr):
         for _id, v in enumerate(arr):
             arr[_id] = [v] * n_subword[_id]
-        return [x for l in arr for x in l]
+        return [x for l in arr for x in l] + eos_list
 
     ret = {"pos": replicate(pos), "gov": replicate(gov), "depth": replicate(depth), "sib_ord": replicate(sib_ord)}
 
@@ -250,9 +272,10 @@ def token_generator(source_path, target_path, token_vocab, eos=None):
             source, target = source_file.readline(), target_file.readline()
             while source and target:
                 source_ints = token_vocab.encode_from_list_hier(tokenizer(source))
-                source_pos, source_ints = dep_tokenizer(source, source_ints)
+                source_pos, source_ints = dep_tokenizer(source, source_ints, eos_list)
                 target_ints = token_vocab.encode(target) + eos_list
-                yield {"inputs": source_ints + eos_list, "targets": target_ints}.update(source_pos)
+                source_pos.update({"inputs": source_ints + eos_list, "targets": target_ints})
+                yield source_pos
                 source, target = source_file.readline(), target_file.readline()
 
 
@@ -268,7 +291,7 @@ def get_or_generate_vocab_inner(data_dir, vocab_filename, vocab_size,
         generator: a generator that produces tokens from the vocabulary
 
       Returns:
-        A SubwordTextEncoder vocabulary object.
+        A DepSubwordTextEncoder vocabulary object.
       """
     if data_dir is None:
         vocab_filepath = None

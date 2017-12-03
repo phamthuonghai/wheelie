@@ -1,11 +1,11 @@
 #!/bin/bash
 
-PROBLEM=translate_encs_small
-MODEL=transformer
+PROBLEM=translate_encs_dep_small
+MODEL=transformer_dep
 HPARAMS=transformer_base_single_gpu
 HOME=`pwd`
 TMP_DIR=$HOME/data/tmp
-DATA_DIR=$HOME/data/encs_small
+DATA_DIR=$HOME/data/encs_dep_small
 TRAIN_DIR=$HOME/train_data/$PROBLEM/$MODEL-$HPARAMS
 USR_DIR=$HOME/t2t-dep
 
