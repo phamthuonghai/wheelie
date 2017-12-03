@@ -26,11 +26,11 @@ EOS = text_encoder.EOS_ID
 
 _ENCS_TRAIN_DATASETS = [
     ["http://ufallab.ms.mff.cuni.cz/~bojar/czeng16-data/data-export-format.0.tar",
-     ("tsv", 3, 7, "data.export-format/*train")],
+     ("tsv", 2, 6, "data.export-format/*train")],
 ]
 _ENCS_TEST_DATASETS = [
     ["http://ufallab.ms.mff.cuni.cz/~bojar/czeng16-data/data-export-format.0.tar",
-     ("tsv", 3, 7, "data.export-format/*test")],
+     ("tsv", 2, 6, "data.export-format/*test")],
 ]
 
 
