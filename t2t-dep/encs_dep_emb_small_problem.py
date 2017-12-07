@@ -91,13 +91,6 @@ class TranslateEncsDepSmall(translate.TranslateProblem):
             data_fields["depth"] = tf.VarLenFeature(tf.int64)
             data_fields["sib_ord"] = tf.VarLenFeature(tf.int64)
 
-        if self.packed_length:
-            if self.has_inputs:
-                data_fields["inputs_segmentation"] = tf.VarLenFeature(tf.int64)
-                data_fields["inputs_position"] = tf.VarLenFeature(tf.int64)
-            data_fields["targets_segmentation"] = tf.VarLenFeature(tf.int64)
-            data_fields["targets_position"] = tf.VarLenFeature(tf.int64)
-
         data_items_to_decoders = None
         return data_fields, data_items_to_decoders
 
