@@ -32,5 +32,5 @@ t2t-trainer \
   --model=$MODEL \
   --hparams_set=$HPARAMS \
   --output_dir=$TRAIN_DIR \
-  --hparams='batch_size=3072,shared_embedding_and_softmax_weights=0' \
+  --hparams='batch_size=3072' \
   --t2t_usr_dir=$USR_DIR
