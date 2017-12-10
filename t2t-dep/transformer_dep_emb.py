@@ -14,7 +14,7 @@ import tensorflow as tf
 
 
 @registry.register_model
-class TransformerDep(transformer.Transformer):
+class TransformerDepEmb(transformer.Transformer):
 
     def model_fn_body(self, features):
         """Transformer main model_fn.

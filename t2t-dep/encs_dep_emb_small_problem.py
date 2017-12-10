@@ -2,7 +2,6 @@
 
 """Data generators for translation data-sets."""
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -11,13 +10,13 @@ from collections import defaultdict
 import tarfile
 
 import tensorflow as tf
-from tensor2tensor.data_generators import problem
 from tensor2tensor.data_generators import text_encoder
 from tensor2tensor.data_generators import translate
 from tensor2tensor.utils import registry
 from tensor2tensor.data_generators.generator_utils import maybe_download, gunzip_file
 
 from .encs_small_problem import tokenizer
+from . import encs_dep_raw_small_problem
 
 FLAGS = tf.flags.FLAGS
 
@@ -35,17 +34,8 @@ _ENCS_TEST_DATASETS = [
 
 
 @registry.register_problem
-class TranslateEncsDepSmall(translate.TranslateProblem):
+class TranslateEncsDepEmbSmall(encs_dep_raw_small_problem.TranslateEncsDepRawSmall):
     """Problem spec for WMT English-Czech translation with dependency in the small dataset."""
-
-    @property
-    def targeted_vocab_size(self):
-        return 2 ** 15
-
-    @property
-    def vocab_name(self):
-        return "vocab.encs"
-
     def generator(self, data_dir, tmp_dir, train):
         datasets = _ENCS_TRAIN_DATASETS if train else _ENCS_TEST_DATASETS
         tag = "train" if train else "dev"
@@ -59,26 +49,6 @@ class TranslateEncsDepSmall(translate.TranslateProblem):
         symbolizer_vocab = get_or_generate_vocab(data_dir, tmp_dir, self.vocab_file,
                                                  self.targeted_vocab_size, vocab_datasets)
         return token_generator(data_path + ".lang1", data_path + ".lang2", symbolizer_vocab, EOS)
-
-    @property
-    def input_space_id(self):
-        return problem.SpaceID.EN_TOK
-
-    @property
-    def target_space_id(self):
-        return problem.SpaceID.CS_TOK
-
-    def feature_encoders(self, data_dir):
-        vocab_filename = os.path.join(data_dir, self.vocab_file)
-        encoder = DepSubwordTextEncoder(vocab_filename)
-        if self.has_inputs:
-            return {"inputs": encoder, "targets": encoder,
-                    "pos": DepPosEncoder(encoder),
-                    "gov": DepGovEncoder(encoder),
-                    "depth": DepDepEncoder(encoder),
-                    "sib_ord": DepSibEncoder(encoder)
-                    }
-        return {"targets": encoder}
 
     def example_reading_spec(self):
         data_fields = {
@@ -114,6 +84,18 @@ class TranslateEncsDepSmall(translate.TranslateProblem):
         p.target_space_id = self.target_space_id
         if self.is_character_level:
             p.loss_multiplier = 2.0
+
+    def feature_encoders(self, data_dir):
+        vocab_filename = os.path.join(data_dir, self.vocab_file)
+        encoder = DepSubwordTextEncoder(vocab_filename)
+        if self.has_inputs:
+            return {"inputs": encoder, "targets": encoder,
+                    "pos": DepPosEncoder(encoder),
+                    "gov": DepGovEncoder(encoder),
+                    "depth": DepDepEncoder(encoder),
+                    "sib_ord": DepSibEncoder(encoder)
+                    }
+        return {"targets": encoder}
 
 
 class DepSubwordTextEncoder(text_encoder.SubwordTextEncoder):
