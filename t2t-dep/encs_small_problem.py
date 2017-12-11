@@ -57,6 +57,13 @@ class TranslateEncsSmall(translate.TranslateProblem):
                                                  self.targeted_vocab_size, vocab_datasets)
         return token_generator(data_path + ".lang1", data_path + ".lang2", symbolizer_vocab, EOS)
 
+    def feature_encoders(self, data_dir):
+        vocab_filename = os.path.join(data_dir, self.vocab_file)
+        encoder = DepSubwordTextEncoder(vocab_filename)
+        if self.has_inputs:
+            return {"inputs": encoder, "targets": encoder}
+        return {"targets": encoder}
+
     @property
     def input_space_id(self):
         return problem.SpaceID.EN_TOK
@@ -64,6 +71,42 @@ class TranslateEncsSmall(translate.TranslateProblem):
     @property
     def target_space_id(self):
         return problem.SpaceID.CS_TOK
+
+
+class DepSubwordTextEncoder(text_encoder.SubwordTextEncoder):
+    def encode(self, raw_text):
+        """Converts a native string to a list of subtoken ids.
+
+        Args:
+          raw_text: a native string.
+        Returns:
+          a list of integers in the range [0, vocab_size)
+        """
+        return self._tokens_to_subtoken_ids(tokenizer(raw_text))
+
+    def encode_from_list(self, tokens):
+        """Converts a list of tokens to a list of subtoken ids.
+        :param tokens: list of Unicode strings
+        :return: a list of integers in the range [0, vocab_size)
+        """
+        return self._tokens_to_subtoken_ids(tokens)
+
+    def encode_from_list_hier(self, tokens):
+        """Converts a list of tokens to a list of subtoken ids.
+        :param tokens: list of Unicode strings
+        :return: a list of integers in the range [0, vocab_size)
+        """
+        return self._tokens_to_list_subtoken_ids(tokens)
+
+    def _tokens_to_list_subtoken_ids(self, tokens):
+        """Converts a list of tokens to a list of subtoken ids.
+        :param tokens: a list of strings.
+        :return: a list of list of integers in the range [0, vocab_size)
+        """
+        ret = []
+        for token in tokens:
+            ret.append(self._token_to_subtoken_ids(token))
+        return ret
 
 
 def tokenizer(text):
