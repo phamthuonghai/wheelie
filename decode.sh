@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PROBLEM=translate_encs_dep_emb_small
+PROBLEM=translate_encs_dep_emb
 MODEL=transformer_dep_emb
 HPARAMS=transformer_base_single_gpu
 

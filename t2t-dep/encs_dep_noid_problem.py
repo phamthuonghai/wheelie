@@ -16,23 +16,16 @@ from tensor2tensor.data_generators import translate
 from tensor2tensor.utils import registry
 from tensor2tensor.data_generators.generator_utils import maybe_download, gunzip_file
 
+from . import data_utils
+
 FLAGS = tf.flags.FLAGS
 
 # End-of-sentence marker.
 EOS = text_encoder.EOS_ID
 
-_ENCS_TRAIN_DATASETS = [
-    ["http://ufallab.ms.mff.cuni.cz/~bojar/czeng16-data/data-export-format.0.tar",
-     ("tsv", 2, 6, "data.export-format/*train")],
-]
-_ENCS_TEST_DATASETS = [
-    ["http://ufallab.ms.mff.cuni.cz/~bojar/czeng16-data/data-export-format.0.tar",
-     ("tsv", 2, 6, "data.export-format/*test")],
-]
-
 
 @registry.register_problem
-class TranslateEncsSmall(translate.TranslateProblem):
+class TranslateEncsDepNoid(translate.TranslateProblem):
     """Problem spec for WMT English-Czech translation with small dataset."""
 
     @property
@@ -44,7 +37,7 @@ class TranslateEncsSmall(translate.TranslateProblem):
         return "vocab.encs"
 
     def generator(self, data_dir, tmp_dir, train):
-        datasets = _ENCS_TRAIN_DATASETS if train else _ENCS_TEST_DATASETS
+        datasets = data_utils.ENCS_DEP_TRAIN_DATASETS if train else data_utils.ENCS_DEP_TEST_DATASETS
         tag = "train" if train else "dev"
         data_path = translate.compile_data(tmp_dir, datasets,
                                            "encs_small_%s" % tag)
@@ -59,7 +52,7 @@ class TranslateEncsSmall(translate.TranslateProblem):
 
     def feature_encoders(self, data_dir):
         vocab_filename = os.path.join(data_dir, self.vocab_file)
-        encoder = DepSubwordTextEncoder(vocab_filename)
+        encoder = data_utils.DepSubwordTextEncoder(vocab_filename)
         if self.has_inputs:
             return {"inputs": encoder, "targets": encoder}
         return {"targets": encoder}
@@ -71,55 +64,6 @@ class TranslateEncsSmall(translate.TranslateProblem):
     @property
     def target_space_id(self):
         return problem.SpaceID.CS_TOK
-
-
-class DepSubwordTextEncoder(text_encoder.SubwordTextEncoder):
-    def encode(self, raw_text):
-        """Converts a native string to a list of subtoken ids.
-
-        Args:
-          raw_text: a native string.
-        Returns:
-          a list of integers in the range [0, vocab_size)
-        """
-        return self._tokens_to_subtoken_ids(tokenizer(raw_text))
-
-    def encode_from_list(self, tokens):
-        """Converts a list of tokens to a list of subtoken ids.
-        :param tokens: list of Unicode strings
-        :return: a list of integers in the range [0, vocab_size)
-        """
-        return self._tokens_to_subtoken_ids(tokens)
-
-    def encode_from_list_hier(self, tokens):
-        """Converts a list of tokens to a list of subtoken ids.
-        :param tokens: list of Unicode strings
-        :return: a list of integers in the range [0, vocab_size)
-        """
-        return self._tokens_to_list_subtoken_ids(tokens)
-
-    def _tokens_to_list_subtoken_ids(self, tokens):
-        """Converts a list of tokens to a list of subtoken ids.
-        :param tokens: a list of strings.
-        :return: a list of list of integers in the range [0, vocab_size)
-        """
-        ret = []
-        for token in tokens:
-            ret.append(self._token_to_subtoken_ids(token))
-        return ret
-
-
-def tokenizer(text):
-    """Encode a unicode string as a list of tokens.
-
-      Args:
-        text: a unicode string
-      Returns:
-        a list of tokens as Unicode strings
-      """
-    if not text:
-        return []
-    return [word.split('|')[0] for word in text.strip().split(' ')]
 
 
 def token_generator(source_path, target_path, token_vocab, eos=None):
@@ -144,8 +88,8 @@ def token_generator(source_path, target_path, token_vocab, eos=None):
         with tf.gfile.GFile(target_path, mode="r") as target_file:
             source, target = source_file.readline(), target_file.readline()
             while source and target:
-                source_ints = token_vocab.encode(' '.join(tokenizer(source))) + eos_list
-                target_ints = token_vocab.encode(' '.join(tokenizer(target))) + eos_list
+                source_ints = token_vocab.encode(source) + eos_list
+                target_ints = token_vocab.encode(target) + eos_list
                 yield {"inputs": source_ints, "targets": target_ints}
                 source, target = source_file.readline(), target_file.readline()
 
@@ -162,7 +106,7 @@ def get_or_generate_vocab_inner(data_dir, vocab_filename, vocab_size,
         generator: a generator that produces tokens from the vocabulary
 
       Returns:
-        A SubwordTextEncoder vocabulary object.
+        A DepSubwordTextEncoder vocabulary object.
       """
     if data_dir is None:
         vocab_filepath = None
@@ -171,16 +115,16 @@ def get_or_generate_vocab_inner(data_dir, vocab_filename, vocab_size,
 
     if vocab_filepath is not None and tf.gfile.Exists(vocab_filepath):
         tf.logging.info("Found vocab file: %s", vocab_filepath)
-        vocab = text_encoder.SubwordTextEncoder(vocab_filepath)
+        vocab = data_utils.DepSubwordTextEncoder(vocab_filepath)
         return vocab
 
     tf.logging.info("Generating vocab file: %s", vocab_filepath)
     token_counts = defaultdict(int)
     for item in generator:
-        for tok in tokenizer(text_encoder.native_to_unicode(item)):
+        for tok in data_utils.tokenizer(text_encoder.native_to_unicode(item)):
             token_counts[tok] += 1
 
-    vocab = text_encoder.SubwordTextEncoder.build_to_target_size(
+    vocab = data_utils.DepSubwordTextEncoder.build_to_target_size(
         vocab_size, token_counts, 1, 1e3)
 
     if vocab_filepath is not None:
