@@ -1,7 +1,7 @@
 #!/bin/bash
 
-PROBLEM=translate_encs_dep_emb
-MODEL=transformer_dep_emb
+PROBLEM=translate_csen_dep_noid
+MODEL=transformer
 HPARAMS=transformer_base_single_gpu
 
 HOME=`pwd`

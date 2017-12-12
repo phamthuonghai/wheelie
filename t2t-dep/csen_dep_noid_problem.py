@@ -37,13 +37,13 @@ class TranslateEncsDepNoid(translate.TranslateProblem):
         return "vocab.encs"
 
     def generator(self, data_dir, tmp_dir, train):
-        datasets = data_utils.ENCS_DEP_TRAIN_DATASETS if train else data_utils.ENCS_DEP_TEST_DATASETS
+        datasets = data_utils.CSEN_DEP_TRAIN_DATASETS if train else data_utils.CSEN_DEP_TEST_DATASETS
         tag = "train" if train else "dev"
         data_path = translate.compile_data(tmp_dir, datasets,
-                                           "encs_small_%s" % tag)
+                                           "csen_dep_small_%s" % tag)
 
         vocab_datasets = [
-            [item[0], ["encs_small_%s.lang1" % tag, "encs_small_%s.lang2" % tag]]
+            [item[0], ["csen_dep_small_%s.lang1" % tag, "csen_dep_small_%s.lang2" % tag]]
             for _id, item in enumerate(datasets)
         ]
         symbolizer_vocab = get_or_generate_vocab(data_dir, tmp_dir, self.vocab_file,

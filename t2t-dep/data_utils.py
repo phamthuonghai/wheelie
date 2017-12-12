@@ -1,11 +1,11 @@
 from tensor2tensor.data_generators import text_encoder
 
 
-ENCS_DEP_TRAIN_DATASETS = [
+CSEN_DEP_TRAIN_DATASETS = [
     ["http://ufallab.ms.mff.cuni.cz/~bojar/czeng16-data/data-export-format.0.tar",
      ("tsv", 2, 6, "data.export-format/*train")],
 ]
-ENCS_DEP_TEST_DATASETS = [
+CSEN_DEP_TEST_DATASETS = [
     ["http://ufallab.ms.mff.cuni.cz/~bojar/czeng16-data/data-export-format.0.tar",
      ("tsv", 2, 6, "data.export-format/*test")],
 ]
