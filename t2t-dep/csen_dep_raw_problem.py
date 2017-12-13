@@ -24,7 +24,7 @@ EOS = text_encoder.EOS_ID
 
 
 @registry.register_problem
-class TranslateEncsDepRaw(translate.TranslateProblem):
+class TranslateCsenDepRaw(translate.TranslateProblem):
     """Problem spec for WMT English-Czech translation with dependency in the small dataset."""
 
     @property
@@ -39,10 +39,10 @@ class TranslateEncsDepRaw(translate.TranslateProblem):
         datasets = data_utils.CSEN_DEP_TRAIN_DATASETS if train else data_utils.CSEN_DEP_TEST_DATASETS
         tag = "train" if train else "dev"
         data_path = translate.compile_data(tmp_dir, datasets,
-                                           "csen_dep_small_%s" % tag)
+                                           "csen_dep_%s" % tag)
 
         vocab_datasets = [
-            [item[0], ["csen_dep_small_%s.lang1" % tag, "csen_dep_small_%s.lang2" % tag]]
+            [item[0], ["csen_dep_%s.lang1" % tag, "csen_dep_%s.lang2" % tag]]
             for _id, item in enumerate(datasets)
         ]
         symbolizer_vocab = get_or_generate_vocab(data_dir, tmp_dir, self.vocab_file,

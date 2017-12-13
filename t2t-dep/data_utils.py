@@ -10,6 +10,15 @@ CSEN_DEP_TEST_DATASETS = [
      ("tsv", 2, 6, "data.export-format/*test")],
 ]
 
+CSEN_PLAIN_TRAIN_DATASETS = [
+    ["http://ufallab.ms.mff.cuni.cz/~bojar/czeng16-data/data-plaintext-format.0.tar",
+     ("tsv", 2, 3, "data.plaintext-format/*train")],
+]
+CSEN_PLAIN_TEST_DATASETS = [
+    ["http://ufallab.ms.mff.cuni.cz/~bojar/czeng16-data/data-plaintext-format.0.tar",
+     ("tsv", 2, 3, "data.plaintext-format/*test")],
+]
+
 
 class DepSubwordTextEncoder(text_encoder.SubwordTextEncoder):
     def encode(self, raw_text):
