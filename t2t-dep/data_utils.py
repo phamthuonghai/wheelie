@@ -1,3 +1,8 @@
+import sys
+import unicodedata
+import six
+from six.moves import xrange  # pylint: disable=redefined-builtin
+
 from tensor2tensor.data_generators import text_encoder
 
 
@@ -18,6 +23,16 @@ CSEN_PLAIN_TEST_DATASETS = [
     ["http://ufallab.ms.mff.cuni.cz/~bojar/czeng16-data/data-plaintext-format.0.tar",
      ("tsv", 2, 3, "data.plaintext-format/*test")],
 ]
+
+# Conversion between Unicode and UTF-8, if required (on Python2)
+_native_to_unicode = (lambda s: s.decode("utf-8")) if six.PY2 else (lambda s: s)
+
+
+# This set contains all letter and number characters.
+_ALPHANUMERIC_CHAR_SET = set(
+    six.unichr(i) for i in xrange(sys.maxunicode)
+    if (unicodedata.category(six.unichr(i)).startswith("L") or
+        unicodedata.category(six.unichr(i)).startswith("N")))
 
 
 class DepSubwordTextEncoder(text_encoder.SubwordTextEncoder):
@@ -54,6 +69,29 @@ class DepSubwordTextEncoder(text_encoder.SubwordTextEncoder):
         for token in tokens:
             ret.append(self._token_to_subtoken_ids(token))
         return ret
+
+    def decode(self, subtokens):
+        """Converts a sequence of subtoken ids to a native string.
+
+        Args:
+          subtokens: a list of integers in the range [0, vocab_size)
+        Returns:
+          a native string
+        """
+        concatenated = "".join(
+            [self._subtoken_id_to_subtoken_string(s) for s in subtokens])
+        split = concatenated.split("_")
+        ret = " "
+        for t in split:
+            if t:
+                unescaped = text_encoder._unescape_token(t + "_")
+                if unescaped:
+                    if ("'" not in unescaped and unescaped[0] in _ALPHANUMERIC_CHAR_SET and
+                            (ret[-1] in _ALPHANUMERIC_CHAR_SET or ret[-1] not in "`([{")) \
+                            or unescaped[0] in "`([{":
+                        ret += " "
+                    ret += unescaped
+        return text_encoder.unicode_to_native(ret[2:])
 
 
 # TODO: These are not efficient
@@ -154,10 +192,11 @@ def tokenizer(text):
     """Encode a unicode string as a list of tokens.
 
       Args:
-        text: a unicode string
+        text: a native string
       Returns:
         a list of tokens as Unicode strings
       """
     if not text:
         return []
+    text = text_encoder.native_to_unicode(text)
     return [word.split('|')[0] for word in text.strip().split(' ')]
