@@ -24,6 +24,15 @@ CSEN_PLAIN_TEST_DATASETS = [
      ("tsv", 2, 3, "data.plaintext-format/*test")],
 ]
 
+ENCS_PLAIN_TRAIN_DATASETS = [
+    ["http://ufallab.ms.mff.cuni.cz/~bojar/czeng16-data/data-plaintext-format.0.tar",
+     ("tsv", 3, 2, "data.plaintext-format/*train")],
+]
+ENCS_PLAIN_TEST_DATASETS = [
+    ["http://ufallab.ms.mff.cuni.cz/~bojar/czeng16-data/data-plaintext-format.0.tar",
+     ("tsv", 3, 2, "data.plaintext-format/*test")],
+]
+
 # Conversion between Unicode and UTF-8, if required (on Python2)
 _native_to_unicode = (lambda s: s.decode("utf-8")) if six.PY2 else (lambda s: s)
 
