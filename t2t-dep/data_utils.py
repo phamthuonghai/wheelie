@@ -24,6 +24,15 @@ CSEN_PLAIN_TEST_DATASETS = [
      ("tsv", 2, 3, "data.plaintext-format/*test")],
 ]
 
+ENCS_DEP_TRAIN_DATASETS = [
+    ["http://ufallab.ms.mff.cuni.cz/~bojar/czeng16-data/data-export-format.0.tar",
+     ("tsv", 6, 2, "data.export-format/*train")],
+]
+ENCS_DEP_TEST_DATASETS = [
+    ["http://ufallab.ms.mff.cuni.cz/~bojar/czeng16-data/data-export-format.0.tar",
+     ("tsv", 6, 2, "data.export-format/*test")],
+]
+
 ENCS_PLAIN_TRAIN_DATASETS = [
     ["http://ufallab.ms.mff.cuni.cz/~bojar/czeng16-data/data-plaintext-format.0.tar",
      ("tsv", 3, 2, "data.plaintext-format/*train")],
