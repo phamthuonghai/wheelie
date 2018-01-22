@@ -20,7 +20,7 @@ if __name__ == '__main__':
         data = line.strip().split('\t')
         if args.export_format:
             source_line = data[2]
-            target_line = data[3]
+            target_line = data[6]
             w_in_target = [w.strip().split('|')[0] for w in target_line.strip().split()]
             target_line = detok.detokenize(w_in_target, return_str=True)
         else:
