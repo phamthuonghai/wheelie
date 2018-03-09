@@ -1,15 +1,15 @@
 #!/bin/bash
 
-PROBLEM=translate_csen_dep_raw
-MODEL=transformer_dep_lrn
+PROBLEM=translate_encs_plain
+MODEL=transformer
 HPARAMS=transformer_base_single_gpu
 
 HOME=`pwd`
-REF_FILE=$HOME/data/plaintest_small.ref
-DECODE_FILE=$HOME/data/deptest_small.src
+REF_FILE=$HOME/data/lindeptest_small.cs
+DECODE_FILE=$HOME/data/lindeptest_small.en
 TMP_DIR=$HOME/data/tmp
-DATA_DIR=$HOME/data/$PROBLEM
-TRAIN_DIR=$HOME/train_data/$PROBLEM/$MODEL-$HPARAMS
+DATA_DIR=$HOME/data/${PROBLEM}
+TRAIN_DIR=$HOME/train_data/${PROBLEM}/$MODEL-$HPARAMS
 USR_DIR=$HOME/t2t-dep
 
 t2t-decoder \
