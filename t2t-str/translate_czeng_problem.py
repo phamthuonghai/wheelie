@@ -59,7 +59,7 @@ class TranslateCsenCzengPlain(translate_encs.TranslateEncsWmt32k):
                     for line in f:
                         for word in tokenizer.tokenize(line.strip()):
                             word_counts[word] += 1
-            word_counts = sorted(word_counts.items(), key=operator.itemgetter(1))[:self.approx_vocab_size]
+            word_counts = sorted(word_counts.items(), key=operator.itemgetter(1), reverse=True)[:self.approx_vocab_size]
             vocab = [w[0] for w in word_counts] + [OOV]
             encoder = text_encoder.TokenTextEncoder(vocab_filename=None, vocab_list=vocab, replace_oov=OOV)
             encoder.store_to_file(vocab_filename)

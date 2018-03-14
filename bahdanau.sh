@@ -47,7 +47,8 @@ t2t-decoder \
   --output_dir=${TRAIN_DIR} \
   --decode_hparams="beam_size=$BEAM_SIZE,alpha=$ALPHA" \
   --decode_from_file=${DECODE_SRC_FILE} \
-  --decode_to_file=${DECODE_TO_FILE}
+  --decode_to_file=${DECODE_TO_FILE} \
+  --t2t_usr_dir=${USR_DIR}
 
 # Evaluate the BLEU score
-#t2t-bleu --translation=${DECODE_TO_FILE} --reference=${DECODE_TAR_FILE}
+t2t-bleu --translation=${DECODE_TO_FILE} --reference=${DECODE_TAR_FILE}
