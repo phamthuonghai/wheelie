@@ -1,7 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" serverName="ud2017.uom">
+  <component name="PublishConfigData" serverName="freki" showNewOnTargetInSync="false">
     <serverData>
+      <paths name="freki">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/depatt" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/_legacy" />
+            <excludedPath local="true" path="$PROJECT_DIR$/data" />
+            <excludedPath local="true" path="$PROJECT_DIR$/train_data" />
+            <excludedPath local="true" path="$PROJECT_DIR$/.env" />
+            <excludedPath local="true" path="$PROJECT_DIR$/.nv" />
+            <excludedPath local="true" path="$PROJECT_DIR$/.keras" />
+          </excludedPaths>
+        </serverdata>
+      </paths>
       <paths name="ud2017.uom">
         <serverdata>
           <mappings>
