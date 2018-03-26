@@ -21,6 +21,11 @@ FLAGS = tf.flags.FLAGS
 EOS = text_encoder.EOS_ID
 OOV = '<OOV>'
 
+__all__ = [
+    "TranslateCsenCzengPlain",
+    "TranslateCsenCzeng"
+]
+
 
 @registry.register_problem
 class TranslateCsenCzengPlain(translate_encs.TranslateEncsWmt32k):
@@ -90,3 +95,84 @@ class TranslateCsenCzengPlain(translate_encs.TranslateEncsWmt32k):
         datasets = datasets[1:]
         vocab_datasets += [[item[0], [item[1][0], item[1][1]]] for item in datasets]
         return vocab_datasets
+
+
+@registry.register_problem
+class TranslateCsenCzeng(TranslateCsenCzengPlain):
+    def feature_encoders(self, data_dir):
+        source_vocab_filename = os.path.join(data_dir, self.source_vocab_name)
+        target_vocab_filename = os.path.join(data_dir, self.target_vocab_name)
+        source_token = data_utils.CzEngTokenTextEncoder(source_vocab_filename)
+        target_token = data_utils.CzEngTokenTextEncoder(target_vocab_filename)
+        return {
+            "inputs": source_token,
+            "targets": target_token,
+            "relative_tree_distance": data_utils.CzEngRelativeTreeDistanceEncoder()
+        }
+
+    def generate_encoded_samples(self, data_dir, tmp_dir, dataset_split):
+        generator = self.generate_samples(data_dir, tmp_dir, dataset_split)
+        source_token = self.get_or_create_vocab(data_dir, tmp_dir, side=0)
+        target_token = self.get_or_create_vocab(data_dir, tmp_dir, side=1)
+        czeng_encoders = {
+            "relative_tree_distance": data_utils.CzEngRelativeTreeDistanceEncoder()
+        }
+        return data_utils.czeng_generate_encoded(generator, vocab=source_token, targets_vocab=target_token,
+                                                 has_inputs=self.has_inputs, czeng_encoders=czeng_encoders)
+
+    def example_reading_spec(self):
+        data_fields = {"targets": tf.VarLenFeature(tf.int64)}
+        if self.has_inputs:
+            data_fields["inputs"] = tf.VarLenFeature(tf.int64)
+            data_fields["relative_tree_distance"] = tf.VarLenFeature(tf.string)
+
+        if self.packed_length:
+            if self.has_inputs:
+                data_fields["inputs_segmentation"] = tf.VarLenFeature(tf.int64)
+                data_fields["inputs_position"] = tf.VarLenFeature(tf.int64)
+            data_fields["targets_segmentation"] = tf.VarLenFeature(tf.int64)
+            data_fields["targets_position"] = tf.VarLenFeature(tf.int64)
+
+        data_items_to_decoders = None
+        return data_fields, data_items_to_decoders
+
+    def decode_example(self, serialized_example):
+        """Return a dict of Tensors from a serialized tensorflow.Example."""
+        data_fields, data_items_to_decoders = self.example_reading_spec()
+        if data_items_to_decoders is None:
+            data_items_to_decoders = {
+                field: tf.contrib.slim.tfexample_decoder.Tensor(
+                    field,
+                    default_value="" if field == "relative_tree_distance" else 0)
+                for field in data_fields
+            }
+
+        decoder = tf.contrib.slim.tfexample_decoder.TFExampleDecoder(
+            data_fields, data_items_to_decoders)
+
+        decode_items = list(data_items_to_decoders)
+        decoded = decoder.decode(serialized_example, items=decode_items)
+        return dict(zip(decode_items, decoded))
+
+    def hparams(self, defaults, unused_model_hparams):
+        p = defaults
+        p.stop_at_eos = int(True)
+
+        if self.has_inputs:
+            source_vocab_size = self._encoders["inputs"].vocab_size
+            p.input_modality = {
+                "inputs": (registry.Modalities.SYMBOL, source_vocab_size),
+                "relative_tree_distance": (registry.Modalities.SYMBOL, source_vocab_size)  # To be overwritten later
+            }
+        target_vocab_size = self._encoders["targets"].vocab_size
+        p.target_modality = (registry.Modalities.SYMBOL, target_vocab_size)
+        if self.vocab_type == VocabType.CHARACTER:
+            p.loss_multiplier = 2.0
+
+        if self.packed_length:
+            identity = (registry.Modalities.GENERIC, None)
+            if self.has_inputs:
+                p.input_modality["inputs_segmentation"] = identity
+                p.input_modality["inputs_position"] = identity
+            p.input_modality["targets_segmentation"] = identity
+            p.input_modality["targets_position"] = identity
