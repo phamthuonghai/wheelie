@@ -14,6 +14,7 @@
             <excludedPath local="true" path="$PROJECT_DIR$/.env" />
             <excludedPath local="true" path="$PROJECT_DIR$/.nv" />
             <excludedPath local="true" path="$PROJECT_DIR$/.keras" />
+            <excludedPath path="/depatt/.env-cpu" />
           </excludedPaths>
         </serverdata>
       </paths>

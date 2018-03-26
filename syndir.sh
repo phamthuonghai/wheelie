@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 #$ -q gpu.q@dll[256]
 #$ -l gpu=1,gpu_cc_min3.5=1,gpu_ram=8G
-#$ -N luong_att
+#$ -N syndir_att
 #$ -cwd
 #$ -j y
 #$ -S /bin/bash
 
-PROBLEM=translate_csen_czeng_plain
-MODEL=lstm_seq2seq_attention_bidirectional_encoder
-HPARAMS=lstm_luong_attention
+PROBLEM=translate_csen_czeng
+MODEL=lstm_syntax_directed_attention
+HPARAMS=lstm_syntax_directed
 
 HOME=$(pwd)
 
@@ -22,7 +22,6 @@ mkdir -p ${TMP_DIR} ${TRAIN_DIR}
 # Generate data
 if [ ! -d "${DATA_DIR}" ]; then
   mkdir -p ${DATA_DIR}
-
   t2t-datagen \
     --data_dir=${DATA_DIR} \
     --tmp_dir=${TMP_DIR} \
