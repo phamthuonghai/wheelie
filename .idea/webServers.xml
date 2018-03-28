@@ -11,7 +11,7 @@
         </fileTransfer>
       </webServer>
       <webServer id="531b3e1e-036c-4f1f-bfc1-97415b1431a0" name="freki" url="http://freki.ms.mff.cuni.cz">
-        <fileTransfer host="freki.ms.mff.cuni.cz" port="22" rootFolder="/ha/home/pham" accessType="SFTP">
+        <fileTransfer host="freki.ms.mff.cuni.cz" port="22" rootFolder="/net/me/merkur3/pham" accessType="SFTP">
           <advancedOptions>
             <advancedOptions dataProtectionLevel="Private" />
           </advancedOptions>

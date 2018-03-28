@@ -6,7 +6,7 @@
 #$ -j y
 #$ -S /bin/bash
 
-PROBLEM=translate_csen_czeng_plain
+PROBLEM=translate_csen_czeng
 MODEL=lstm_seq2seq_attention_bidirectional_encoder
 HPARAMS=lstm_luong_attention
 

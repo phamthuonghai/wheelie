@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#$ -q gpu.q@dll[256]
+#$ -q gpu.q@dll[1256]
 #$ -l gpu=1,gpu_cc_min3.5=1,gpu_ram=8G
 #$ -N syndir_att
 #$ -cwd
