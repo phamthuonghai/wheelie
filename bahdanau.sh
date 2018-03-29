@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
-PROBLEM=translate_csen_czeng_plain
+#$ -q gpu.q@dll[1256]
+#$ -l gpu=1,gpu_cc_min3.5=1,gpu_ram=8G
+#$ -N bahdanau_att
+#$ -cwd
+#$ -j y
+#$ -S /bin/bash
+
+PROBLEM=translate_csen_czeng
 MODEL=lstm_seq2seq_attention_bidirectional_encoder
-HPARAMS=lstm_bahdanau_attention
+HPARAMS=czeng_lstm_bahdanau_attention
 
 HOME=$(pwd)
 
@@ -35,9 +42,9 @@ t2t-trainer \
 # Decode
 BEAM_SIZE=4
 ALPHA=0.6
-DECODE_SRC_FILE=${TMP_DIR}/data.plaintext-format/09decode.cs
-DECODE_TAR_FILE=${TMP_DIR}/data.plaintext-format/09decode.en
-DECODE_TO_FILE=${PROBLEM}-${MODEL}-${HPARAMS}.en
+DECODE_SRC_FILE=${TMP_DIR}/data.export-format/09decode.cs
+DECODE_TGT_FILE=${TMP_DIR}/data.export-format/09decode.en
+DECODE_TO_FILE=${DATA_DIR}/${MODEL}-${HPARAMS}.en
 
 t2t-decoder \
   --data_dir=${DATA_DIR} \
@@ -51,4 +58,4 @@ t2t-decoder \
   --t2t_usr_dir=${USR_DIR}
 
 # Evaluate the BLEU score
-t2t-bleu --translation=${DECODE_TO_FILE} --reference=${DECODE_TAR_FILE}
+cat ${DECODE_TO_FILE} | sacrebleu -t none ${DECODE_TGT_FILE}

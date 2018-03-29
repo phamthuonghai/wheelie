@@ -41,9 +41,9 @@ t2t-trainer \
 # Decode
 BEAM_SIZE=4
 ALPHA=0.6
-DECODE_SRC_FILE=${TMP_DIR}/data.plaintext-format/09decode.cs
-DECODE_TGT_FILE=${TMP_DIR}/data.plaintext-format/09decode.en
-DECODE_TO_FILE=${PROBLEM}-${MODEL}-${HPARAMS}.en
+DECODE_SRC_FILE=${TMP_DIR}/data.export-format/09decode.cs
+DECODE_TGT_FILE=${TMP_DIR}/data.export-format/09decode.en
+DECODE_TO_FILE=${DATA_DIR}/${MODEL}-${HPARAMS}.en
 
 t2t-decoder \
   --data_dir=${DATA_DIR} \

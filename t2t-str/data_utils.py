@@ -1,4 +1,3 @@
-import numpy as np
 from tensor2tensor.data_generators import text_encoder
 
 CSEN_DEP_TRAIN_DATASETS = [

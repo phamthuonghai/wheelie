@@ -48,8 +48,8 @@ class TranslateCsenCzengPlain(translate_encs.TranslateEncsWmt32k):
     def feature_encoders(self, data_dir):
         source_vocab_filename = os.path.join(data_dir, self.source_vocab_name)
         target_vocab_filename = os.path.join(data_dir, self.target_vocab_name)
-        source_token = data_utils.CzEngTokenTextEncoder(source_vocab_filename)
-        target_token = data_utils.CzEngTokenTextEncoder(target_vocab_filename)
+        source_token = data_utils.CzEngTokenTextEncoder(source_vocab_filename, replace_oov=OOV)
+        target_token = data_utils.CzEngTokenTextEncoder(target_vocab_filename, replace_oov=OOV)
         return {
             "inputs": source_token,
             "targets": target_token,
@@ -102,8 +102,8 @@ class TranslateCsenCzeng(TranslateCsenCzengPlain):
     def feature_encoders(self, data_dir):
         source_vocab_filename = os.path.join(data_dir, self.source_vocab_name)
         target_vocab_filename = os.path.join(data_dir, self.target_vocab_name)
-        source_token = data_utils.CzEngTokenTextEncoder(source_vocab_filename)
-        target_token = data_utils.CzEngTokenTextEncoder(target_vocab_filename)
+        source_token = data_utils.CzEngTokenTextEncoder(source_vocab_filename, replace_oov=OOV)
+        target_token = data_utils.CzEngTokenTextEncoder(target_vocab_filename, replace_oov=OOV)
         return {
             "inputs": source_token,
             "targets": target_token,

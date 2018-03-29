@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#$ -q gpu.q@dll[256]
+#$ -q gpu.q@dll[1256]
 #$ -l gpu=1,gpu_cc_min3.5=1,gpu_ram=8G
 #$ -N luong_att
 #$ -cwd
@@ -8,7 +8,7 @@
 
 PROBLEM=translate_csen_czeng
 MODEL=lstm_seq2seq_attention_bidirectional_encoder
-HPARAMS=lstm_luong_attention
+HPARAMS=czeng_lstm_luong_attention
 
 HOME=$(pwd)
 
@@ -42,9 +42,9 @@ t2t-trainer \
 # Decode
 BEAM_SIZE=4
 ALPHA=0.6
-DECODE_SRC_FILE=${TMP_DIR}/data.plaintext-format/09decode.cs
-DECODE_TGT_FILE=${TMP_DIR}/data.plaintext-format/09decode.en
-DECODE_TO_FILE=${PROBLEM}-${MODEL}-${HPARAMS}.en
+DECODE_SRC_FILE=${TMP_DIR}/data.export-format/09decode.cs
+DECODE_TGT_FILE=${TMP_DIR}/data.export-format/09decode.en
+DECODE_TO_FILE=${DATA_DIR}/${MODEL}-${HPARAMS}.en
 
 t2t-decoder \
   --data_dir=${DATA_DIR} \
