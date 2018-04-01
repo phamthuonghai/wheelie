@@ -8,7 +8,7 @@
 
 PROBLEM=translate_csen_czeng
 MODEL=transformer
-HPARAMS=czeng_transformer_big_single_gpu
+HPARAMS=czeng_transformer_base_single_gpu
 
 HOME=$(pwd)
 
@@ -58,4 +58,4 @@ t2t-decoder \
   --t2t_usr_dir=${USR_DIR}
 
 # Evaluate the BLEU score
-cat ${DECODE_TO_FILE} | sacrebleu -t none ${DECODE_TGT_FILE}
+cat ${DECODE_TO_FILE} | sacrebleu --tok none ${DECODE_TGT_FILE}

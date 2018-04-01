@@ -1,11 +1,12 @@
 from tensor2tensor.models.lstm import lstm_attention_base, lstm_luong_attention, lstm_bahdanau_attention
-from tensor2tensor.models.transformer import transformer_big_single_gpu
+from tensor2tensor.models.transformer import transformer_big_single_gpu, transformer_base_single_gpu
 from tensor2tensor.utils import registry
 
 __all__ = ["lstm_syntax_directed",
            "czeng_lstm_luong_attention",
            "czeng_lstm_bahdanau_attention",
-           "czeng_transformer_big_single_gpu"
+           "czeng_transformer_big_single_gpu",
+           "czeng_transformer_base_single_gpu"
            ]
 
 
@@ -37,5 +38,12 @@ def czeng_lstm_bahdanau_attention():
 def czeng_transformer_big_single_gpu():
     """Hparams for Transformer."""
     hparams = transformer_big_single_gpu()
+    hparams.input_modalities = "inputs:symbol:default;relative_tree_distance:symbol:relative_tree_distance"
+    return hparams
+
+@registry.register_hparams
+def czeng_transformer_base_single_gpu():
+    """Hparams for Transformer."""
+    hparams = transformer_base_single_gpu()
     hparams.input_modalities = "inputs:symbol:default;relative_tree_distance:symbol:relative_tree_distance"
     return hparams
