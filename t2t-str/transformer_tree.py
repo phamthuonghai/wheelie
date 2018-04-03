@@ -11,14 +11,13 @@ __all__ = ["TransformerTree"]
 
 @registry.register_model
 class TransformerTree(transformer.Transformer):
-    def encode_tree(self, inputs, target_space, hparams, relative_tree_distance, features=None):
+    def encode(self, inputs, target_space, hparams, features=None):
         """Encode transformer inputs.
 
         Args:
           inputs: Transformer inputs [batch_size, input_length, input_height,
             hidden_dim] which will be flattened along the two spatial dimensions.
           target_space: scalar, target space ID.
-          relative_tree_distance:
           hparams: hyperparmeters for model.
           features: optionally pass the entire features dictionary as well.
             This is needed now for "packed" datasets.
@@ -31,6 +30,7 @@ class TransformerTree(transformer.Transformer):
                   encoder-decoder attention. [batch_size, input_length]
         """
         inputs = common_layers.flatten4d3d(inputs)
+        relative_tree_distance = features["relative_tree_distance"]
 
         encoder_input, self_attention_bias, encoder_decoder_attention_bias = (
             transformer.transformer_prepare_encoder(
@@ -45,54 +45,6 @@ class TransformerTree(transformer.Transformer):
             save_weights_to=self.attention_weights)
 
         return encoder_output, encoder_decoder_attention_bias
-
-    def body(self, features):
-        """Transformer main model_fn.
-
-        Args:
-          features: Map of features to the model. Should contain the following:
-              "inputs": Transformer inputs [batch_size, input_length, hidden_dim]
-              "tragets": Target decoder outputs.
-                  [batch_size, decoder_length, hidden_dim]
-              "target_space_id"
-
-        Returns:
-          Final decoder representation. [batch_size, decoder_length, hidden_dim]
-        """
-        hparams = self._hparams
-
-        if self.has_input:
-            inputs = features["inputs"]
-            relative_tree_distance = features["relative_tree_distance"]
-            target_space = features["target_space_id"]
-            encoder_output, encoder_decoder_attention_bias = self.encode_tree(
-                inputs, target_space, hparams, relative_tree_distance, features=features)
-        else:
-            encoder_output, encoder_decoder_attention_bias = (None, None)
-
-        targets = features["targets"]
-        targets = common_layers.flatten4d3d(targets)
-
-        decoder_input, decoder_self_attention_bias = transformer.transformer_prepare_decoder(
-            targets, hparams, features=features)
-
-        decoder_output = self.decode(
-            decoder_input,
-            encoder_output,
-            encoder_decoder_attention_bias,
-            decoder_self_attention_bias,
-            hparams,
-            nonpadding=transformer.features_to_nonpadding(features, "targets"))
-
-        expected_attentions = features.get("expected_attentions")
-        if expected_attentions is not None:
-            attention_loss = common_attention.encoder_decoder_attention_loss(
-                expected_attentions, self.attention_weights,
-                hparams.expected_attention_loss_type,
-                hparams.expected_attention_loss_multiplier)
-            return decoder_output, {"attention_loss": attention_loss}
-
-        return decoder_output
 
 
 def transformer_tree_encoder(encoder_input,
@@ -156,6 +108,8 @@ def transformer_tree_encoder(encoder_input,
                         attention_type=hparams.self_attention_type,
                         save_weights_to=save_weights_to,
                         max_relative_position=hparams.max_relative_position,
+                        max_relative_tree_distance=hparams.max_relative_tree_distance,
+                        combine_tree_seq_emb=hparams.combine_tree_seq_emb,
                         make_image_summary=make_image_summary,
                         dropout_broadcast_dims=attention_dropout_broadcast_dims)
                     x = common_layers.layer_postprocess(x, y, hparams)

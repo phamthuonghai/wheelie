@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensor2tensor.layers import common_attention
+from tensor2tensor.layers import common_attention, common_layers
 from tensorflow.contrib.seq2seq import LuongAttention
 from tensorflow.python.ops import array_ops, math_ops
 from tensorflow.python.ops import variable_scope
@@ -108,6 +108,8 @@ def multihead_attention_tree(query_antecedent,
                              num_heads,
                              dropout_rate,
                              max_relative_position=None,
+                             max_relative_tree_distance=None,
+                             combine_tree_seq_emb=None,
                              image_shapes=None,
                              attention_type="dot_product",
                              block_length=128,
@@ -139,6 +141,8 @@ def multihead_attention_tree(query_antecedent,
         max_relative_position: Maximum distance between inputs to generate
                                unique relation embeddings for. Only relevant
                                when using "dot_product_relative" attention.
+        max_relative_tree_distance:
+        combine_tree_seq_emb:
         image_shapes: optional tuple of integer scalars.
                       see comments for attention_image_summary()
         attention_type: a string, either "dot_product", "dot_product_relative",
@@ -236,14 +240,10 @@ def multihead_attention_tree(query_antecedent,
                                                        make_image_summary=make_image_summary,
                                                        dropout_broadcast_dims=dropout_broadcast_dims)
         elif attention_type == "dot_product_relative":
-            x = common_attention.dot_product_attention_relative(q, k, v, bias, max_relative_position,
-                                                                dropout_rate, image_shapes,
-                                                                make_image_summary=make_image_summary)
-        elif attention_type == "dot_product_relative_tree_emb":
-            x = dot_product_attention_relative_tree_emb(q, k, v, bias, max_relative_position,
-                                                        relative_tree_distance,
-                                                        dropout_rate, image_shapes,
-                                                        make_image_summary=make_image_summary)
+            x = dot_product_attention_relative(q, k, v, bias, max_relative_position,
+                                               relative_tree_distance, max_relative_tree_distance,
+                                               dropout_rate, image_shapes, combine_tree_seq_emb=combine_tree_seq_emb,
+                                               make_image_summary=make_image_summary)
         elif attention_type == "local_within_block_mask_right":
             x = common_attention.masked_within_block_local_attention_1d(q, k, v,
                                                                         block_length=block_length)
@@ -268,19 +268,32 @@ def multihead_attention_tree(query_antecedent,
         return x
 
 
-def _generate_tree_relative_positions_matrix(relative_tree_distance, max_relative_position):
-    return tf.clip_by_value(relative_tree_distance, 0, max_relative_position)
+def _generate_tree_relative_positions_matrix(relative_tree_distance, max_relative_tree_distance):
+    return tf.clip_by_value(tf.cast(relative_tree_distance, dtype=tf.int32), 0, max_relative_tree_distance)
 
 
-def _generate_tree_relative_positions_embeddings(relative_tree_distance, depth, max_relative_position, name):
+def _generate_tree_relative_positions_embeddings(relative_tree_distance,
+                                                 length,
+                                                 depth,
+                                                 max_relative_position,
+                                                 max_relative_tree_distance,
+                                                 combine_tree_seq_emb,
+                                                 name):
     """Generates tensor of size [batch_size, length, length, depth]."""
     with tf.variable_scope(name):
-        relative_positions_matrix = _generate_tree_relative_positions_matrix(
-            relative_tree_distance, max_relative_position)
-        vocab_size = max_relative_position + 1
-        # Generates embedding for each relative position of dimension depth.
-        embeddings_table = tf.get_variable("embeddings", [vocab_size, depth])
-        embeddings = tf.gather(embeddings_table, relative_positions_matrix)
+        tree_relative_positions_matrix = _generate_tree_relative_positions_matrix(
+            relative_tree_distance, max_relative_tree_distance)
+        tree_vocab_size = max_relative_tree_distance + 1
+        tree_embeddings_table = tf.get_variable("tree_embeddings", [tree_vocab_size, depth])
+        embeddings = tf.gather(tree_embeddings_table, tree_relative_positions_matrix)
+
+        if combine_tree_seq_emb:
+            seq_relative_positions_matrix = common_attention._generate_relative_positions_matrix(
+                length, max_relative_position)
+            seq_vocab_size = 2 * max_relative_position + 1
+            seq_embeddings_table = tf.get_variable("seq_embeddings", [seq_vocab_size, depth])
+            embeddings = embeddings + tf.gather(seq_embeddings_table, seq_relative_positions_matrix)
+
         return embeddings
 
 
@@ -310,16 +323,18 @@ def _relative_tree_attention_inner(x, y, z, transpose):
     return xy_matmul + x_t_matmul_t
 
 
-def dot_product_attention_relative_tree_emb(q,
-                                            k,
-                                            v,
-                                            bias,
-                                            max_relative_position,
-                                            relative_tree_distance,
-                                            dropout_rate=0.0,
-                                            image_shapes=None,
-                                            name=None,
-                                            make_image_summary=True):
+def dot_product_attention_relative(q,
+                                   k,
+                                   v,
+                                   bias,
+                                   max_relative_position,
+                                   relative_tree_distance=None,
+                                   max_relative_tree_distance=None,
+                                   dropout_rate=0.0,
+                                   image_shapes=None,
+                                   combine_tree_seq_emb=False,
+                                   name=None,
+                                   make_image_summary=True):
     """Calculate relative position-aware dot-product self-attention.
 
       The attention calculation is augmented with learned representations for the
@@ -333,8 +348,10 @@ def dot_product_attention_relative_tree_emb(q,
         max_relative_position: an integer specifying the maxmimum distance between
             inputs that unique position embeddings should be learned for.
         relative_tree_distance:
+        max_relative_tree_distance:
         dropout_rate: a floating point number.
         image_shapes: optional tuple of integer scalars.
+        combine_tree_seq_emb:
         name: an optional string.
         make_image_summary: Whether to make an attention image summary.
 
@@ -357,10 +374,13 @@ def dot_product_attention_relative_tree_emb(q,
 
         # Use separate embeddings suitable for keys and values.
         depth = q.get_shape().as_list()[3]
+        length = common_layers.shape_list(q)[2]
         relations_keys = _generate_tree_relative_positions_embeddings(
-            relative_tree_distance, depth, max_relative_position, "relative_positions_keys")
+            relative_tree_distance, length, depth, max_relative_position,
+            max_relative_tree_distance, combine_tree_seq_emb, "relative_positions_keys")
         relations_values = _generate_tree_relative_positions_embeddings(
-            relative_tree_distance, depth, max_relative_position, "relative_positions_values")
+            relative_tree_distance, length, depth, max_relative_position,
+            max_relative_tree_distance, combine_tree_seq_emb, "relative_positions_values")
 
         # Compute self attention considering the relative position embeddings.
         logits = _relative_tree_attention_inner(q, k, relations_keys, True)

@@ -8,7 +8,7 @@
 
 PROBLEM=translate_csen_czeng
 MODEL=transformer_tree
-HPARAMS=transformer_relative
+HPARAMS=transformer_relative_tree_20
 
 HOME=$(pwd)
 
