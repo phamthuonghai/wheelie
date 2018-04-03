@@ -162,7 +162,7 @@ class TranslateCsenCzeng(TranslateCsenCzengPlain):
             source_vocab_size = self._encoders["inputs"].vocab_size
             p.input_modality = {
                 "inputs": (registry.Modalities.SYMBOL, source_vocab_size),
-                "relative_tree_distance": (registry.Modalities.SYMBOL, source_vocab_size)  # To be overwritten later
+                "relative_tree_distance": ("symbol:relative_tree_distance", 0)
             }
         target_vocab_size = self._encoders["targets"].vocab_size
         p.target_modality = (registry.Modalities.SYMBOL, target_vocab_size)
