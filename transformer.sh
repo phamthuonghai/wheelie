@@ -8,7 +8,7 @@
 
 PROBLEM=translate_csen_czeng
 MODEL=transformer
-HPARAMS=czeng_transformer_base_single_gpu
+HPARAMS=transformer_base_single_gpu
 
 HOME=$(pwd)
 

@@ -8,7 +8,7 @@
 
 PROBLEM=translate_csen_czeng
 MODEL=lstm_seq2seq_attention_bidirectional_encoder
-HPARAMS=czeng_lstm_luong_attention
+HPARAMS=lstm_luong_attention
 
 HOME=$(pwd)
 
