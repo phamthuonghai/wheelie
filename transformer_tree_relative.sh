@@ -37,6 +37,7 @@ t2t-trainer \
   --model=${MODEL} \
   --hparams_set=${HPARAMS} \
   --hparams='batch_size=3072' \
+  --keep_checkpoint_max=5 \
   --output_dir=${TRAIN_DIR} \
   --t2t_usr_dir=${USR_DIR}
 

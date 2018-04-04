@@ -36,6 +36,8 @@ t2t-trainer \
   --problems=${PROBLEM} \
   --model=${MODEL} \
   --hparams_set=${HPARAMS} \
+  --hparams='batch_size=3072' \
+  --keep_checkpoint_max=5 \
   --output_dir=${TRAIN_DIR} \
   --t2t_usr_dir=${USR_DIR}
 
@@ -51,6 +53,7 @@ t2t-decoder \
   --problems=${PROBLEM} \
   --model=${MODEL} \
   --hparams_set=${HPARAMS} \
+  --hparams='batch_size=3072' \
   --output_dir=${TRAIN_DIR} \
   --decode_hparams="beam_size=$BEAM_SIZE,alpha=$ALPHA" \
   --decode_from_file=${DECODE_SRC_FILE} \
