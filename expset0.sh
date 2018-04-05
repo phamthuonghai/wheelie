@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
-#$ -q gpu.q@dll[56]
-#$ -l gpu=1,gpu_cc_min6.1=1,gpu_ram=11G
-#$ -N transformer
+#$ -q gpu.q@dll[1256]
+#$ -l gpu=1,gpu_cc_min3.5=1,gpu_ram=8G
 #$ -cwd
 #$ -j y
 #$ -S /bin/bash
 
 PROBLEM=translate_csen_czeng
-MODEL=transformer
-HPARAMS=transformer_base_single_gpu
+MODEL=$1
+HPARAMS=$2
 
 HOME=$(pwd)
 
@@ -36,8 +35,6 @@ t2t-trainer \
   --problems=${PROBLEM} \
   --model=${MODEL} \
   --hparams_set=${HPARAMS} \
-  --hparams='batch_size=3072' \
-  --keep_checkpoint_max=5 \
   --output_dir=${TRAIN_DIR} \
   --t2t_usr_dir=${USR_DIR}
 
@@ -53,7 +50,6 @@ t2t-decoder \
   --problems=${PROBLEM} \
   --model=${MODEL} \
   --hparams_set=${HPARAMS} \
-  --hparams='batch_size=3072' \
   --output_dir=${TRAIN_DIR} \
   --decode_hparams="beam_size=$BEAM_SIZE,alpha=$ALPHA" \
   --decode_from_file=${DECODE_SRC_FILE} \
@@ -61,4 +57,4 @@ t2t-decoder \
   --t2t_usr_dir=${USR_DIR}
 
 # Evaluate the BLEU score
-cat ${DECODE_TO_FILE} | sacrebleu --tok none ${DECODE_TGT_FILE}
+cat ${DECODE_TO_FILE} | sacrebleu -t none ${DECODE_TGT_FILE}

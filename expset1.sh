@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 #$ -q gpu.q@dll[56]
 #$ -l gpu=1,gpu_cc_min6.1=1,gpu_ram=11G
-#$ -N transformer_relative
 #$ -cwd
 #$ -j y
 #$ -S /bin/bash
 
 PROBLEM=translate_csen_czeng
-MODEL=transformer
-HPARAMS=transformer_relative
+MODEL=$1
+HPARAMS=$2
 
 HOME=$(pwd)
 
