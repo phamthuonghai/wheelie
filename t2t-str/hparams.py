@@ -44,3 +44,11 @@ def transformer_relative_tree_5():
     hparams.combine_tree_seq_emb = False
     hparams.max_relative_tree_distance = 5
     return hparams
+
+
+@registry.register_hparams
+def transformer_relative_tree_5_absseq():
+    """Use tree relative position embeddings with absolute sequential position encodings."""
+    hparams = transformer_relative_tree_5()
+    hparams.pos = 'timing'
+    return hparams
