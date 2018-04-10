@@ -10,6 +10,7 @@ def _syntax_directed_score(query, keys, att_scores):
     Args:
         query: Tensor, shape `[batch_size, num_units]` to compare to keys.
         keys: Processed memory, shape `[batch_size, max_time, num_units]`.
+        att_scores: `[batch_size, max_time, max_time]`
     Returns:
         A `[batch_size, max_time]` tensor of unnormalized score values.
     Raises:
@@ -51,8 +52,10 @@ def _syntax_directed_score(query, keys, att_scores):
     mask = tf.squeeze(mask, [1])
     M_i = tf.boolean_mask(att_scores, mask)
     max_time = tf.cast(max_time, tf.float32) ** 2 / 2
-    score = tf.multiply(global_score,
-                        tf.exp(-tf.divide(tf.square(M_i), max_time), name='syn_score'))
+    # Batch_size must match, in case of decoding query.shape[0] = batch_size * beam_size
+    with tf.control_dependencies([tf.assert_equal(tf.shape(mask)[0], tf.shape(att_scores)[0])]):
+        score = tf.multiply(global_score,
+                            tf.exp(-tf.divide(tf.square(M_i), max_time), name='syn_score'))
     # TODO: take into account n-gram SDC
     return score
 

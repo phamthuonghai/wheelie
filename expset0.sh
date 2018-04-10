@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #$ -q gpu.q@dll[1256]
-#$ -l gpu=1,gpu_cc_min3.5=1,gpu_ram=8G
+#$ -l gpu=1,gpu_cc_min6.1=1,gpu_ram=8G
 #$ -cwd
 #$ -j y
 #$ -S /bin/bash

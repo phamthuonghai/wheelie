@@ -16,30 +16,6 @@ DATA_DIR=$HOME/data/${PROBLEM}
 TRAIN_DIR=$HOME/train_data/${PROBLEM}/${MODEL}-${HPARAMS}
 USR_DIR=$HOME/t2t-str
 
-mkdir -p ${TMP_DIR} ${TRAIN_DIR}
-
-# Generate data
-if [ ! -d "${DATA_DIR}" ]; then
-  mkdir -p ${DATA_DIR}
-
-  t2t-datagen \
-    --data_dir=${DATA_DIR} \
-    --tmp_dir=${TMP_DIR} \
-    --problem=${PROBLEM} \
-    --t2t_usr_dir=${USR_DIR}
-fi
-
-# Train
-t2t-trainer \
-  --data_dir=${DATA_DIR} \
-  --problems=${PROBLEM} \
-  --model=${MODEL} \
-  --hparams_set=${HPARAMS} \
-  --hparams='batch_size=3072' \
-  --keep_checkpoint_max=5 \
-  --output_dir=${TRAIN_DIR} \
-  --t2t_usr_dir=${USR_DIR}
-
 # Decode
 BEAM_SIZE=4
 ALPHA=0.6
