@@ -23,7 +23,7 @@ OOV = '<OOV>'
 
 __all__ = [
     "TranslateCsenCzengPlain",
-    "TranslateCsenCzeng"
+    "TranslateCsenCzeng",
 ]
 
 
