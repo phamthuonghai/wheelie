@@ -53,7 +53,7 @@ t2t-decoder \
   --model=${MODEL} \
   --hparams_set=${HPARAMS} \
   --output_dir=${TRAIN_DIR} \
-  --decode_hparams="beam_size=$BEAM_SIZE,alpha=$ALPHA" \
+  --decode_hparams="beam_size=$BEAM_SIZE,alpha=$ALPHA,batch_size=4" \
   --decode_from_file=${DECODE_SRC_FILE} \
   --decode_to_file=${DECODE_TO_FILE} \
   --t2t_usr_dir=${USR_DIR}

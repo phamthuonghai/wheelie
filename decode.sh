@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-#$ -q gpu.q@dll[56]
-#$ -l gpu=1,gpu_cc_min6.1=1,gpu_ram=11G
+#$ -q gpu.q@dll[1256]
+#$ -l gpu=1,gpu_cc_min6.1=1,gpu_ram=8G
 #$ -cwd
 #$ -j y
 #$ -S /bin/bash
@@ -29,7 +29,7 @@ t2t-decoder \
   --model=${MODEL} \
   --hparams_set=${HPARAMS} \
   --output_dir=${TRAIN_DIR} \
-  --decode_hparams="beam_size=$BEAM_SIZE,alpha=$ALPHA" \
+  --decode_hparams="beam_size=$BEAM_SIZE,alpha=$ALPHA,batch_size=4" \
   --decode_from_file=${DECODE_SRC_FILE} \
   --decode_to_file=${DECODE_TO_FILE} \
   --t2t_usr_dir=${USR_DIR}
