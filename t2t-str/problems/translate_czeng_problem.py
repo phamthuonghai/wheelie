@@ -107,7 +107,8 @@ class TranslateCsenCzeng(TranslateCsenCzengPlain):
         return {
             "inputs": source_token,
             "targets": target_token,
-            "relative_tree_distance": data_utils.CzEngRelativeTreeDistanceEncoder()
+            "relative_tree_distance_str": data_utils.CzEngRelativeTreeDistanceEncoder(),
+            "tree_traversal_str": data_utils.CzEngTreeTranversalStrEncoder(),
         }
 
     def generate_encoded_samples(self, data_dir, tmp_dir, dataset_split):
@@ -115,7 +116,8 @@ class TranslateCsenCzeng(TranslateCsenCzengPlain):
         source_token = self.get_or_create_vocab(data_dir, tmp_dir, side=0)
         target_token = self.get_or_create_vocab(data_dir, tmp_dir, side=1)
         czeng_encoders = {
-            "relative_tree_distance": data_utils.CzEngRelativeTreeDistanceEncoder()
+            "relative_tree_distance_str": data_utils.CzEngRelativeTreeDistanceEncoder(),
+            "tree_traversal_str": data_utils.CzEngTreeTranversalStrEncoder(),
         }
         return data_utils.czeng_generate_encoded(generator, vocab=source_token, targets_vocab=target_token,
                                                  has_inputs=self.has_inputs, czeng_encoders=czeng_encoders)
@@ -124,7 +126,8 @@ class TranslateCsenCzeng(TranslateCsenCzengPlain):
         data_fields = {"targets": tf.VarLenFeature(tf.int64)}
         if self.has_inputs:
             data_fields["inputs"] = tf.VarLenFeature(tf.int64)
-            data_fields["relative_tree_distance"] = tf.VarLenFeature(tf.string)
+            data_fields["relative_tree_distance_str"] = tf.VarLenFeature(tf.string)
+            data_fields["tree_traversal_str"] = tf.VarLenFeature(tf.string)
 
         if self.packed_length:
             if self.has_inputs:
@@ -143,7 +146,7 @@ class TranslateCsenCzeng(TranslateCsenCzengPlain):
             data_items_to_decoders = {
                 field: tf.contrib.slim.tfexample_decoder.Tensor(
                     field,
-                    default_value="" if field == "relative_tree_distance" else 0)
+                    default_value="" if 'str' in field else 0)
                 for field in data_fields
             }
 
@@ -162,7 +165,8 @@ class TranslateCsenCzeng(TranslateCsenCzengPlain):
             source_vocab_size = self._encoders["inputs"].vocab_size
             p.input_modality = {
                 "inputs": (registry.Modalities.SYMBOL, source_vocab_size),
-                "relative_tree_distance": ("symbol:relative_tree_distance", 0)
+                "relative_tree_distance_str": ("symbol:relative_tree_distance_str", 0),
+                "tree_traversal_str": ("symbol:relative_tree_distance_str", 0),
             }
         target_vocab_size = self._encoders["targets"].vocab_size
         p.target_modality = (registry.Modalities.SYMBOL, target_vocab_size)

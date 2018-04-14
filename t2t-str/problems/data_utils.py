@@ -61,31 +61,108 @@ class CzEngRelativeTreeDistanceEncoder:
         sentence = [word.split('|') for word in sentence.strip().split()]
 
         l_s = len(sentence)
-        head_ids = [int(word[4])-1 for word in sentence]
+        head_ids = [-1] + [int(word[4]) for word in sentence]
 
-        neighbors = [[] for _ in range(l_s)]
+        neighbors = [[] for _ in range(l_s+1)]
         for _id, head_id in enumerate(head_ids):
             if head_id >= 0:
                 neighbors[head_id].append(_id)
                 # head is also its neighbor
                 neighbors[_id].append(head_id)
 
-        visited = [False] * l_s
-        ret = [['0' for _ in range(l_s)] for _ in range(l_s)]
+        visited = [False] * (l_s+1)
+        ret = [['0' for _ in range(l_s)] for _ in range(l_s)]  # Remove ROOT
 
         # should be BFS, but this is tree, so basically no difference
         def dfs(root, cur_id, dep):
-            ret[root][cur_id] = str(dep)
+            if cur_id > 0:
+                ret[root-1][cur_id-1] = str(dep)
             visited[cur_id] = True
             for neighbor in neighbors[cur_id]:
                 if not visited[neighbor]:
                     dfs(root, neighbor, dep+1)
 
-        for _id in range(l_s):
-            visited = [False] * l_s
+        for _id in range(1, l_s+1):
+            visited = [False] * (l_s+1)
             visited[_id] = True
             dfs(_id, _id, 1)
-            ret[_id] = ','.join(ret[_id])
+            ret[_id-1] = ','.join(ret[_id-1])
+
+        return ret
+
+
+MAX_TRAVERSAL_LENGTH = 10
+OUT_OF_REACH_ID = '1'
+
+
+def _generate_tree_traversal_code():
+    # Tree traversal pattern
+    # U*D* : go n ups and n downs
+    # LD*  : left siblings then downs
+    # RD*  : right siblings then downs
+    n = MAX_TRAVERSAL_LENGTH
+    tree_traversal_code = ['L', 'R']
+    for i in range(n+1):
+        for j in range(i+1):
+            tree_traversal_code.append(('U' * j) + ('D' * (i-j)))
+
+    ret = {}
+    for _id, code in enumerate(tree_traversal_code):
+        ret[code] = str(_id + 2)  # reserve 0 for padding, 1 for out-of-reach
+    return ret
+
+TREE_TRAVERSAL_ID = _generate_tree_traversal_code()
+
+
+class CzEngTreeTranversalStrEncoder:
+    def encode(self, sentence):
+        """Returns tree traversal id in dependency parse
+        :param
+            sentence: string in czeng export format
+                "He|he|PRP|1|2|Sb saved|save|VBD|2|0|Pred my|my|PRP$|3|4|Atr ever-lovin|ever-lovin|NN|4|6|Atr
+                '|'|''|5|6|AuxG neck|neck|NN|6|2|Obj .|.|.|7|0|AuxK"
+        :return:
+            tree_traversal_str: string, tree traversal id, node separated by ','
+        """
+        sentence = [word.split('|') for word in sentence.strip().split()]
+
+        l_s = len(sentence)
+        head_ids = [-1] + [int(word[4]) for word in sentence]
+
+        children = [[] for _ in range(l_s+1)]
+        for _id, head_id in enumerate(head_ids):
+            if head_id >= 0:
+                children[head_id].append(_id)
+
+        visited = [False] * (l_s + 1)
+        ret = [[OUT_OF_REACH_ID for _ in range(l_s)] for _ in range(l_s)]  # Remove ROOT
+
+        # should be BFS, but this is tree, so basically no difference
+        def dfs(root, cur_id, diary):
+            if diary == 'UD':
+                # Special cases for left and right siblings
+                tmp_diary = 'L' if cur_id < root else 'R'
+            else:
+                tmp_diary = diary
+
+            if cur_id > 0:
+                ret[root-1][cur_id-1] = TREE_TRAVERSAL_ID.get(tmp_diary, OUT_OF_REACH_ID)
+
+            if len(diary) >= MAX_TRAVERSAL_LENGTH:
+                return
+
+            visited[cur_id] = True
+            if head_ids[cur_id] >= 0 and not visited[head_ids[cur_id]]:
+                dfs(root, head_ids[cur_id], diary + 'U')
+            for neighbor in children[cur_id]:
+                if not visited[neighbor]:
+                    dfs(root, neighbor, diary + 'D')
+
+        for _id in range(1, l_s+1):
+            visited = [False] * (l_s + 1)
+            visited[_id] = True
+            dfs(_id, _id, '')
+            ret[_id-1] = ','.join(ret[_id-1])
 
         return ret
 

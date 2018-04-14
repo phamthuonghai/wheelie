@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensor2tensor.utils import registry, modality
 
 __all__ = [
-    "RelativeTreeDistanceModality",
+    "RelativeTreeDistanceStrModality",
 ]
 
 #
@@ -17,8 +17,8 @@ __all__ = [
 #     return ret
 
 
-@registry.register_symbol_modality("relative_tree_distance")
-class RelativeTreeDistanceModality(modality.Modality):
+@registry.register_symbol_modality("relative_tree_distance_str")
+class RelativeTreeDistanceStrModality(modality.Modality):
     def bottom(self, x):
         max_length = tf.shape(x)[-1]
         t = tf.map_fn(
