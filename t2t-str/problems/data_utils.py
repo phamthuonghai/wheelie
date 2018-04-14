@@ -84,7 +84,7 @@ class CzEngRelativeTreeDistanceEncoder:
         for _id in range(l_s):
             visited = [False] * l_s
             visited[_id] = True
-            dfs(_id, _id, 0)
+            dfs(_id, _id, 1)
             ret[_id] = ','.join(ret[_id])
 
         return ret
