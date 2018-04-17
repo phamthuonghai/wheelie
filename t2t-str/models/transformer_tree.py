@@ -30,7 +30,7 @@ class TransformerTree(transformer.Transformer):
                   encoder-decoder attention. [batch_size, input_length]
         """
         inputs = common_layers.flatten4d3d(inputs)
-        relative_tree_distance = features["relative_tree_distance"]
+        relative_tree_distance = features[hparams.relative_tree_input]
 
         encoder_input, self_attention_bias, encoder_decoder_attention_bias = (
             transformer.transformer_prepare_encoder(

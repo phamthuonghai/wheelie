@@ -20,11 +20,11 @@ def lstm_syntax_directed():
 
 
 @registry.register_hparams
-def transformer_relative_tree_20_seq():
-    """Use tree+sequential relative position embeddings instead of absolute sequential position encodings."""
+def transformer_relative_tree_traversal():
+    """Use tree relative traversal embeddings instead of relative/absolute sequential position encodings."""
     hparams = transformer_relative()
-    hparams.combine_tree_seq_emb = True
-    hparams.max_relative_tree_distance = 20
+    hparams.relative_tree_input = 'tree_traversal_str'
+    hparams.combine_tree_seq_emb = False
     return hparams
 
 
@@ -32,8 +32,17 @@ def transformer_relative_tree_20_seq():
 def transformer_relative_tree_20():
     """Use tree relative position embeddings instead of relative/absolute sequential position encodings."""
     hparams = transformer_relative()
+    hparams.relative_tree_input = 'relative_tree_distance_str'
     hparams.combine_tree_seq_emb = False
     hparams.max_relative_tree_distance = 20
+    return hparams
+
+
+@registry.register_hparams
+def transformer_relative_tree_20_seq():
+    """Use tree+sequential relative position embeddings instead of absolute sequential position encodings."""
+    hparams = transformer_relative_tree_20()
+    hparams.combine_tree_seq_emb = True
     return hparams
 
 
@@ -41,7 +50,6 @@ def transformer_relative_tree_20():
 def transformer_relative_tree_5():
     """Use tree relative position embeddings instead of relative/absolute sequential position encodings."""
     hparams = transformer_relative_tree_20()
-    hparams.combine_tree_seq_emb = False
     hparams.max_relative_tree_distance = 5
     return hparams
 
