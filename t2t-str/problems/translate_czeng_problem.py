@@ -99,9 +99,19 @@ class TranslateCsenCzengPlain(translate_encs.TranslateEncsWmt32k):
 
 @registry.register_problem
 class TranslateCsenCzeng(TranslateCsenCzengPlain):
+    @property
+    def pos_name(self):
+        return "pos.csen.cs"
+
+    @property
+    def deprel_name(self):
+        return "deprel.csen.cs"
+
     def feature_encoders(self, data_dir):
         source_vocab_filename = os.path.join(data_dir, self.source_vocab_name)
         target_vocab_filename = os.path.join(data_dir, self.target_vocab_name)
+        pos_filename = os.path.join(data_dir, self.pos_name)
+        deprel_filename = os.path.join(data_dir, self.deprel_name)
         source_token = data_utils.CzEngTokenTextEncoder(source_vocab_filename, replace_oov=OOV)
         target_token = data_utils.CzEngTokenTextEncoder(target_vocab_filename, replace_oov=OOV)
         return {
@@ -109,15 +119,40 @@ class TranslateCsenCzeng(TranslateCsenCzengPlain):
             "targets": target_token,
             "relative_tree_distance_str": data_utils.CzEngRelativeTreeDistanceEncoder(),
             "tree_traversal_str": data_utils.CzEngTreeTranversalStrEncoder(),
+            "pos": data_utils.CzEngTokenTextEncoder(pos_filename, replace_oov=OOV, format_index=2),
+            "deprel": data_utils.CzEngTokenTextEncoder(deprel_filename, replace_oov=OOV, format_index=5),
         }
+
+    def get_or_create_token_features(self, data_dir, tmp_dir, vocab_name, side=0, format_index=0):
+        vocab_filename = os.path.join(data_dir, vocab_name)
+        if not tf.gfile.Exists(vocab_filename):
+            word_counts = defaultdict(int)
+            for data_file in self.vocab_data_files():
+                with tf.gfile.Open(os.path.join(tmp_dir, data_file[1][side]), mode="r") as f:
+                    tf.logging.info("Build feature %d vocab from %s" % (format_index, data_file[1][side]))
+                    for line in f:
+                        for word in line.strip().split():
+                            word_counts[word.split('|')[format_index]] += 1
+            word_counts = sorted(word_counts.items(), key=operator.itemgetter(1), reverse=True)[:self.approx_vocab_size]
+            vocab = [w[0] for w in word_counts] + [OOV]
+            encoder = data_utils.CzEngTokenTextEncoder(vocab_filename=None, vocab_list=vocab,
+                                                       replace_oov=OOV, format_index=format_index)
+            encoder.store_to_file(vocab_filename)
+        else:
+            encoder = data_utils.CzEngTokenTextEncoder(vocab_filename, replace_oov=OOV, format_index=format_index)
+        return encoder
 
     def generate_encoded_samples(self, data_dir, tmp_dir, dataset_split):
         generator = self.generate_samples(data_dir, tmp_dir, dataset_split)
         source_token = self.get_or_create_vocab(data_dir, tmp_dir, side=0)
         target_token = self.get_or_create_vocab(data_dir, tmp_dir, side=1)
+        pos_token = self.get_or_create_token_features(data_dir, tmp_dir, self.pos_name, format_index=2)
+        deprel_token = self.get_or_create_token_features(data_dir, tmp_dir, self.deprel_name, format_index=5)
         czeng_encoders = {
             "relative_tree_distance_str": data_utils.CzEngRelativeTreeDistanceEncoder(),
             "tree_traversal_str": data_utils.CzEngTreeTranversalStrEncoder(),
+            "pos": pos_token,
+            "deprel": deprel_token,
         }
         return data_utils.czeng_generate_encoded(generator, vocab=source_token, targets_vocab=target_token,
                                                  has_inputs=self.has_inputs, czeng_encoders=czeng_encoders)
@@ -128,6 +163,8 @@ class TranslateCsenCzeng(TranslateCsenCzengPlain):
             data_fields["inputs"] = tf.VarLenFeature(tf.int64)
             data_fields["relative_tree_distance_str"] = tf.VarLenFeature(tf.string)
             data_fields["tree_traversal_str"] = tf.VarLenFeature(tf.string)
+            data_fields["pos"] = tf.VarLenFeature(tf.int64)
+            data_fields["deprel"] = tf.VarLenFeature(tf.int64)
 
         if self.packed_length:
             if self.has_inputs:
@@ -167,6 +204,8 @@ class TranslateCsenCzeng(TranslateCsenCzengPlain):
                 "inputs": (registry.Modalities.SYMBOL, source_vocab_size),
                 "relative_tree_distance_str": ("symbol:relative_tree_distance_str", 0),
                 "tree_traversal_str": ("symbol:relative_tree_distance_str", 0),
+                "pos": (registry.Modalities.SYMBOL, self._encoders["pos"].vocab_size),
+                "deprel": (registry.Modalities.SYMBOL, self._encoders["deprel"].vocab_size),
             }
         target_vocab_size = self._encoders["targets"].vocab_size
         p.target_modality = (registry.Modalities.SYMBOL, target_vocab_size)

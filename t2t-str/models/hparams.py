@@ -1,13 +1,6 @@
 from tensor2tensor.models.lstm import lstm_attention_base
-from tensor2tensor.models.transformer import transformer_relative
+from tensor2tensor.models.transformer import transformer_relative, transformer_base
 from tensor2tensor.utils import registry
-
-__all__ = [
-    "lstm_syntax_directed",
-    "transformer_relative_tree_20_seq",
-    "transformer_relative_tree_20",
-    "transformer_relative_tree_5",
-]
 
 
 @registry.register_hparams
@@ -25,6 +18,7 @@ def transformer_relative_tree_traversal():
     hparams = transformer_relative()
     hparams.relative_tree_input = 'tree_traversal_str'
     hparams.combine_tree_seq_emb = False
+    hparams.max_relative_tree_distance = 20  # dummy
     return hparams
 
 
@@ -59,4 +53,18 @@ def transformer_relative_tree_5_absseq():
     """Use tree relative position embeddings with absolute sequential position encodings."""
     hparams = transformer_relative_tree_5()
     hparams.pos = 'timing'
+    return hparams
+
+
+@registry.register_hparams
+def transformer_enhanced_pos():
+    hparams = transformer_base()
+    hparams.add_pos = True
+    return hparams
+
+
+@registry.register_hparams
+def transformer_enhanced_deprel():
+    hparams = transformer_base()
+    hparams.add_deprel = True
     return hparams

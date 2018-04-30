@@ -38,9 +38,15 @@ ENCS_PLAIN_TEST_DATASETS = [
 
 
 class CzEngTokenTextEncoder(text_encoder.TokenTextEncoder):
+    def __init__(self, vocab_filename, reverse=False, vocab_list=None, replace_oov=None,
+                 num_reserved_ids=text_encoder.NUM_RESERVED_TOKENS, format_index=0):
+        super(CzEngTokenTextEncoder, self).__init__(vocab_filename, reverse=reverse, vocab_list=vocab_list,
+                                                    replace_oov=replace_oov, num_reserved_ids=num_reserved_ids)
+        self.format_index = format_index
+
     def encode(self, sentence):
         """Converts an export format sentence to a list of ids."""
-        tokens = [word.split('|')[0] for word in sentence.strip().split()]
+        tokens = [word.split('|')[self.format_index] for word in sentence.strip().split()]
         if self._replace_oov is not None:
             tokens = [t if t in self._token_to_id else self._replace_oov
                       for t in tokens]
@@ -175,6 +181,8 @@ def czeng_generate_encoded(sample_generator, vocab, targets_vocab=None, has_inpu
             if czeng_encoders is not None:
                 for feature, encoder in czeng_encoders.items():
                     sample[feature] = encoder.encode(sample["inputs"])
+                    if 'str' not in feature:
+                        sample[feature].append(text_encoder.EOS_ID)
 
             sample["inputs"] = vocab.encode(sample["inputs"])
             sample["inputs"].append(text_encoder.EOS_ID)
