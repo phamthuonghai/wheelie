@@ -51,6 +51,24 @@ class TransformerReservedHeads(transformer.Transformer):
 
         return encoder_output, encoder_decoder_attention_bias
 
+    def _fast_decode(self, features, decode_length,
+                     beam_size=1, top_beams=1, alpha=1.0):
+        hparams = self._hparams
+
+        def _transform_in_decode(inputs, input_label):
+            inputs_modality = self._problem_hparams.input_modality[input_label]
+            with tf.variable_scope(inputs_modality.name):
+                inputs = inputs_modality.bottom(inputs)
+            return inputs
+
+        if hasattr(hparams, 'pos_head') and hparams.pos_head:
+            features['pos'] = _transform_in_decode(features['pos'], 'pos')
+
+        if hasattr(hparams, 'deprel_head') and hparams.deprel_head:
+            features['deprel'] = _transform_in_decode(features['deprel'], 'deprel')
+
+        return super(TransformerReservedHeads, self)._fast_decode(features, decode_length, beam_size, top_beams, alpha)
+
 
 def transformer_encoder(encoder_input,
                         encoder_self_attention_bias,
