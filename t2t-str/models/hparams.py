@@ -68,3 +68,17 @@ def transformer_enhanced_deprel():
     hparams = transformer_base()
     hparams.add_deprel = True
     return hparams
+
+
+@registry.register_hparams
+def transformer_reserved_pos():
+    hparams = transformer_base()
+    hparams.pos_head = True
+    return hparams
+
+
+@registry.register_hparams
+def transformer_reserved_deprel():
+    hparams = transformer_base()
+    hparams.deprel_head = True
+    return hparams
