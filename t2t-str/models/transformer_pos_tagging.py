@@ -4,7 +4,6 @@ from tensor2tensor.models.transformer import transformer_prepare_decoder, featur
 from tensor2tensor.utils import registry
 from tensor2tensor.models import transformer
 
-
 __all__ = ["TransformerPosTagging"]
 
 
@@ -59,3 +58,33 @@ class TransformerPosTagging(transformer.Transformer):
             "targets": decoder_output,
             "target_pos": encoder_output,
         }
+
+    def _loss_single(self, logits, target_modality, feature):
+        # The current bfloat16 version still uses float32 for most parts of backward
+        # propagation to keep model quality, so cast back before computing the loss
+        # value.
+        logits = tf.cast(logits, tf.float32)
+
+        loss_num, loss_den = target_modality.loss(logits, feature)
+        loss_num *= self._problem_hparams.loss_multiplier
+        return loss_num, loss_den
+
+    def loss(self, logits, features):
+        if isinstance(logits, dict):
+            if self._problem_hparams:
+                target_modality = self._problem_hparams.target_modality
+            else:
+                target_modality = {k: None for k in logits.keys()}
+            assert set(logits.keys()) == set(target_modality.keys()), (
+                "The keys of model_body's returned logits dict must match the keys "
+                "of problem_hparams.target_modality's dict.")
+            losses = {}
+            for k, v in logits.items():
+                losses[k] = self._loss_single(v, target_modality[k], features[k])
+            return tf.add_n([n / d for n, d in losses.values()])
+        else:
+            target_modality = self._problem_hparams.target_modality
+            assert not isinstance(target_modality, dict), (
+                "model_body must return a dictionary of logits when "
+                "problem_hparams.target_modality is a dict.")
+            return self._loss_single(logits, target_modality, features['targets'])
