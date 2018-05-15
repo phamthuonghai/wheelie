@@ -36,6 +36,8 @@ def transformer_relative_tree_20():
 def transformer_relative_tree_20_seq():
     """Use tree+sequential relative position embeddings instead of absolute sequential position encodings."""
     hparams = transformer_relative_tree_20()
+    hparams.input_modalities = "inputs:symbol:default;relative_tree_distance_str:symbol:relative_tree_distance_str"
+    hparams.remove_redundant_modalities = True
     hparams.combine_tree_seq_emb = True
     return hparams
 
