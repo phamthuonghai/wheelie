@@ -3,7 +3,7 @@ from tensor2tensor.layers import common_layers, common_attention
 from tensor2tensor.models.transformer import transformer_prepare_decoder, features_to_nonpadding
 from tensor2tensor.utils import registry
 from tensor2tensor.models import transformer
-from tensor2tensor.utils.t2t_model import log_info, log_warn
+from tensor2tensor.utils.t2t_model import log_info, log_warn, _remove_summaries, _del_dict_nones
 
 __all__ = ["TransformerPosTagging"]
 
@@ -57,8 +57,11 @@ class TransformerPosTagging(transformer.Transformer):
 
         return {
             "targets": decoder_output,
-            "target_pos": encoder_output,
+            "target_pos": self.tagging(encoder_output),
         }
+
+    def tagging(self, encoder_output):
+        return encoder_output
 
     def _loss_single(self, logits, target_modality, feature):
         # The current bfloat16 version still uses float32 for most parts of backward
@@ -101,7 +104,7 @@ class TransformerPosTagging(transformer.Transformer):
           beam_size: number of beams.
           top_beams: an integer. How many of the beams to return.
           alpha: Float that controls the length penalty. larger the alpha, stronger
-            the preference for slonger translations.
+            the preference for longer translations.
 
         Returns:
           A dict of decoding results {
@@ -307,4 +310,58 @@ class TransformerPosTagging(transformer.Transformer):
                 ret["outputs"] = ret["outputs"][:, partial_targets_length:]
             else:
                 ret["outputs"] = ret["outputs"][:, :, partial_targets_length:]
+
+        target_pos_modality = self._problem_hparams.target_modality['target_pos']
+        with tf.variable_scope('target_pos/' + target_pos_modality.name):
+            pos_logits = target_pos_modality.top_sharded(encoder_output, None, dp)[0]
+            pos_ids = tf.argmax(pos_logits, axis=-1)
+            ret['output_pos'] = tf.squeeze(pos_ids, axis=-1)
+
         return ret
+
+    def estimator_spec_predict(self, features):
+        """Construct EstimatorSpec for PREDICT mode."""
+        decode_hparams = self._decode_hparams
+        infer_out = self.infer(
+            features,
+            beam_size=decode_hparams.beam_size,
+            top_beams=(decode_hparams.beam_size
+                       if decode_hparams.return_beams else 1),
+            alpha=decode_hparams.alpha,
+            decode_length=decode_hparams.extra_length)
+        outputs = infer_out["outputs"]
+        scores = infer_out["scores"]
+        output_pos = infer_out["output_pos"]
+
+        batched_problem_choice = (
+                features["problem_choice"] * tf.ones(
+            (common_layers.shape_list(features["inputs"])[0],), dtype=tf.int32))
+        predictions = {
+            "outputs": outputs,
+            "scores": scores,
+            "inputs": features.get("inputs"),
+            "targets": features.get("infer_targets"),
+            "problem_choice": batched_problem_choice,
+            "batch_prediction_key": features.get("batch_prediction_key"),
+            "output_pos": output_pos,
+        }
+        _del_dict_nones(predictions)
+
+        export_out = {"outputs": predictions["outputs"], "output_pos": predictions["output_pos"]}
+        if "scores" in predictions:
+            export_out["scores"] = predictions["scores"]
+
+        # Necessary to rejoin examples in the correct order with the Cloud ML Engine
+        # batch prediction API.
+        if "batch_prediction_key" in predictions:
+            export_out["batch_prediction_key"] = predictions["batch_prediction_key"]
+
+        _remove_summaries()
+
+        return tf.estimator.EstimatorSpec(
+            tf.estimator.ModeKeys.PREDICT,
+            predictions=predictions,
+            export_outputs={
+                tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
+                    tf.estimator.export.PredictOutput(export_out)
+            })
