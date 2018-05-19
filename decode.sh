@@ -9,6 +9,8 @@ PROBLEM=translate_csen_czeng
 MODEL=$1
 HPARAMS=$2
 
+echo $1-$2
+
 HOME=$(pwd)
 
 TMP_DIR=$HOME/data/tmp

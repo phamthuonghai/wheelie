@@ -17,6 +17,8 @@ DATA_DIR=$HOME/data/${PROBLEM}
 TRAIN_DIR=$HOME/train_data/${PROBLEM_TRAIN_DIR}/${MODEL}-${HPARAMS}
 USR_DIR=$HOME/t2t-str
 
+echo $1-$2
+
 # Decode
 BEAM_SIZE=4
 ALPHA=0.6

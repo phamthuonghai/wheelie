@@ -16,6 +16,8 @@ DATA_DIR=$HOME/data/${PROBLEM}
 TRAIN_DIR=$HOME/train_data/${PROBLEM}/${MODEL}-${HPARAMS}
 USR_DIR=$HOME/t2t-str
 
+echo $1-$2
+
 mkdir -p ${TMP_DIR} ${TRAIN_DIR}
 
 # Generate data

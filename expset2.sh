@@ -17,6 +17,8 @@ DATA_DIR=$HOME/data/${PROBLEM}
 TRAIN_DIR=$HOME/train_data/${PROBLEM_TRAIN_DIR}/${MODEL}-${HPARAMS}
 USR_DIR=$HOME/t2t-str
 
+echo $1-$2-$3
+
 mkdir -p ${TMP_DIR} ${TRAIN_DIR}
 
 # Generate data
@@ -38,6 +40,7 @@ t2t-trainer \
   --hparams_set=${HPARAMS} \
   --hparams='batch_size=3072' \
   --keep_checkpoint_max=1 \
+  --train_steps=${3} \
   --output_dir=${TRAIN_DIR} \
   --t2t_usr_dir=${USR_DIR}
 
