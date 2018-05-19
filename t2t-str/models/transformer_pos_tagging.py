@@ -61,7 +61,11 @@ class TransformerPosTagging(transformer.Transformer):
         }
 
     def tagging(self, encoder_output):
-        return encoder_output
+        if hasattr(self.hparams, 'tagging_num_heads') and self.hparams.tagging_num_heads < self.hparams.num_heads:
+            tagging_size = self.hparams.hidden_size * self.hparams.tagging_num_heads // self.hparams.num_heads
+            return tf.split(encoder_output, [self.hparams.hidden_size - tagging_size, tagging_size], axis=-1)[1]
+        else:
+            return encoder_output
 
     def _loss_single(self, logits, target_modality, feature):
         # The current bfloat16 version still uses float32 for most parts of backward
