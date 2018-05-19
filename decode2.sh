@@ -6,6 +6,7 @@
 #$ -S /bin/bash
 
 PROBLEM=translate_pos_tagging_csen_czeng
+PROBLEM_TRAIN_DIR=translate_csen_czeng
 MODEL=$1
 HPARAMS=$2
 
@@ -13,7 +14,7 @@ HOME=$(pwd)
 
 TMP_DIR=$HOME/data/tmp
 DATA_DIR=$HOME/data/${PROBLEM}
-TRAIN_DIR=$HOME/train_data/${PROBLEM}/${MODEL}-${HPARAMS}
+TRAIN_DIR=$HOME/train_data/${PROBLEM_TRAIN_DIR}/${MODEL}-${HPARAMS}
 USR_DIR=$HOME/t2t-str
 
 # Decode

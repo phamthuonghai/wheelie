@@ -1,9 +1,12 @@
+import inspect
+
 import tensorflow as tf
 from tensor2tensor.layers import common_layers, common_attention
 from tensor2tensor.models.transformer import transformer_prepare_decoder, features_to_nonpadding
-from tensor2tensor.utils import registry
+from tensor2tensor.utils import registry, metrics as metrics_mod
 from tensor2tensor.models import transformer
-from tensor2tensor.utils.t2t_model import log_info, log_warn, _remove_summaries, _del_dict_nones
+from tensor2tensor.utils.t2t_model import log_info, log_warn, _remove_summaries, _del_dict_nones, \
+    _create_tpu_eval_metrics_fn, _no_problem_err
 
 __all__ = ["TransformerPosTagging"]
 
@@ -369,3 +372,158 @@ class TransformerPosTagging(transformer.Transformer):
                 tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY:
                     tf.estimator.export.PredictOutput(export_out)
             })
+
+    def estimator_spec_eval(self, features, logits, labels, loss, losses_dict):
+        """Construct EstimatorSpec for EVAL mode."""
+        hparams = self.hparams
+
+        if not hasattr(hparams, "problem_instances"):
+            raise NotImplementedError(_no_problem_err("estimator_spec_eval"))
+
+        problem = hparams.problem_instances[0]
+        if common_layers.is_on_tpu():
+            _remove_summaries()
+            if isinstance(logits, dict):
+                eval_metrics_fn = _create_tpu_eval_metrics_fn(problem, hparams)
+                # For TPU, logits dict will be passed as keyword arguments to
+                # eval_metrics_fn. Here we add the labels to those arguments.
+                logits.update({"labels": labels})
+                return tf.contrib.tpu.TPUEstimatorSpec(
+                    tf.estimator.ModeKeys.EVAL,
+                    eval_metrics=(eval_metrics_fn, logits),
+                    loss=loss)
+            else:
+                eval_metrics_fn = _create_tpu_eval_metrics_fn(problem, hparams)
+                return tf.contrib.tpu.TPUEstimatorSpec(
+                    tf.estimator.ModeKeys.EVAL,
+                    eval_metrics=(eval_metrics_fn, [logits, labels]),
+                    loss=loss)
+        else:
+            eval_metrics_fns = create_evaluation_metrics([problem], hparams)
+            eval_metrics = {}
+            for metric_name, metric_fn in eval_metrics_fns.items():
+                if isinstance(logits, dict):
+                    # the key is located in the center of metric_name: "metrics-%s/%s/%s"
+                    # in case of targets is: "metrics-%s/%s"
+                    mt_split = metric_name.split("/")
+                    if len(mt_split) > 2:
+                        k = mt_split[1]
+                    else:
+                        k = 'targets'
+                    eval_metrics[metric_name] = metric_fn(logits[k], features, k)
+                else:
+                    eval_metrics[metric_name] = metric_fn(logits, features)
+            if isinstance(logits, dict):
+                predictions = logits
+            else:
+                predictions = {"predictions": logits}
+            return tf.estimator.EstimatorSpec(
+                tf.estimator.ModeKeys.EVAL,
+                predictions=predictions,
+                eval_metric_ops=eval_metrics,
+                loss=loss)
+
+
+def create_evaluation_metrics(problems, model_hparams):
+    """Creates the evaluation metrics for the model.
+
+      Args:
+        problems: List of Problem instances.
+        model_hparams: a set of hparams.
+
+      Returns:
+        dict<metric name, metric function>. The metric functions have signature
+        (Tensor predictions, features) -> (metric Tensor, update op), where features
+        is a dict with keys {targets, problem_choice}.
+
+      Raises:
+        ValueError: if the metrics specified by a problem are not recognized (i.e.
+          are not defined in the Metrics enum.
+      """
+
+    def make_problem_specific_metric_fn(metric_fn, problem_idx, weights_fn):
+        """Create a metric fn conditioned on problem_idx."""
+
+        def problem_metric_fn(predictions, features, feature_name='targets'):
+            """Metric fn."""
+            labels = features.get(feature_name, None)
+            while len(labels.shape) < len(predictions.shape)-1:
+                labels = tf.expand_dims(labels, axis=-1)
+            problem_choice = features.get("problem_choice", 0)
+
+            # Send along the entire features dict if the metric fn has the kwarg
+            # "features".
+            kwargs = {}
+            args, _, keywords, _ = inspect.getargspec(metric_fn)
+            if ("features" in args) or keywords:
+                kwargs["features"] = features
+
+            def wrapped_metric_fn():
+                return metric_fn(predictions, labels, weights_fn=weights_fn, **kwargs)
+
+            (scores, weights) = tf.cond(
+                tf.equal(problem_idx, problem_choice), wrapped_metric_fn,
+                lambda: (tf.constant(0.0), tf.constant(0.0)))
+            # The tf.metrics.mean function assures correct aggregation.
+            return tf.metrics.mean(scores, weights)
+
+        return problem_metric_fn
+
+    eval_metrics = dict()
+    for problem_idx, problem_instance in enumerate(problems):
+        problem_name = problem_instance.name
+        metrics = problem_instance.eval_metrics()
+        if not all([m in metrics_mod.METRICS_FNS for m in metrics]):
+            error_str = ("Unrecognized metric. Problem %s specified metrics "
+                         "%s. Recognized metrics are %s.")
+            raise ValueError(error_str % (problem_name,
+                                          metrics,
+                                          list(metrics_mod.METRICS_FNS.keys())))
+
+        def image_wrapped_metric_fn(predictions,
+                                    labels,
+                                    weights_fn=common_layers.weights_nonzero):
+            del weights_fn
+            return metric_fn(predictions, labels, model_hparams)
+
+        tm = problem_instance.get_hparams().target_modality
+        if isinstance(tm, dict):
+            for k, v in tm.items():
+                if isinstance(v, tuple):
+                    v = registry.create_modality(v, model_hparams)
+                weights_fn = v.targets_weights_fn
+
+                for metric in metrics:
+                    metric_fn = metrics_mod.METRICS_FNS[metric]
+                    # Show in the same graph with single task training on TFBoard
+                    problem_fake_name = problem_name.split('_')
+                    problem_fake_name = '_'.join(problem_fake_name[:1] + problem_fake_name[3:])
+                    if k == 'targets':
+                        metric_name = "metrics-%s/%s" % (problem_fake_name, metric)
+                    else:
+                        if metric not in [metrics_mod.Metrics.ACC, metrics_mod.Metrics.ACC_TOP5,
+                                          metrics_mod.Metrics.ACC_PER_SEQ]:
+                            continue
+                        metric_name = "metrics-%s/%s/%s" % (problem_fake_name, k, metric)
+                    if metric == metrics_mod.Metrics.IMAGE_SUMMARY:
+                        eval_metrics[metric_name] = image_wrapped_metric_fn
+                    else:
+                        problem_metric_fn = make_problem_specific_metric_fn(
+                            metric_fn, problem_idx, weights_fn)
+                        eval_metrics[metric_name] = problem_metric_fn
+        else:
+            if isinstance(tm, tuple):
+                tm = registry.create_modality(tm, model_hparams)
+            weights_fn = tm.targets_weights_fn
+
+            for metric in metrics:
+                metric_fn = metrics_mod.METRICS_FNS[metric]
+                metric_name = "metrics-%s/%s" % (problem_name, metric)
+                if metric == metrics_mod.Metrics.IMAGE_SUMMARY:
+                    eval_metrics[metric_name] = image_wrapped_metric_fn
+                else:
+                    problem_metric_fn = make_problem_specific_metric_fn(
+                        metric_fn, problem_idx, weights_fn)
+                    eval_metrics[metric_name] = problem_metric_fn
+
+    return eval_metrics
