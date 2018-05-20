@@ -61,6 +61,14 @@ def transformer_relative_tree_5_absseq():
 
 
 @registry.register_hparams
+def transformer_relative_tree_5_seq():
+    """Use tree+sequential relative position embeddings instead of absolute sequential position encodings."""
+    hparams = transformer_relative_tree_20_seq()
+    hparams.max_relative_tree_distance = 5
+    return hparams
+
+
+@registry.register_hparams
 def transformer_enhanced_pos():
     hparams = transformer_base()
     hparams.add_pos = True
