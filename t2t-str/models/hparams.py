@@ -16,6 +16,8 @@ def lstm_syntax_directed():
 def transformer_relative_tree_traversal():
     """Use tree relative traversal embeddings instead of relative/absolute sequential position encodings."""
     hparams = transformer_relative()
+    hparams.input_modalities = "inputs:symbol:default;tree_traversal_str:symbol:relative_tree_distance_str"
+    hparams.remove_redundant_modalities = True
     hparams.relative_tree_input = 'tree_traversal_str'
     hparams.combine_tree_seq_emb = False
     hparams.max_relative_tree_distance = 20  # dummy

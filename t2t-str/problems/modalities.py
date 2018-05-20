@@ -23,8 +23,8 @@ class RelativeTreeDistanceStrModality(modality.Modality):
         max_length = tf.shape(x)[-1]
         t = tf.map_fn(
             lambda y: tf.sparse_tensor_to_dense(
-                # dirty fix: max_length+1
-                tf.sparse_reset_shape(tf.string_split(y, ','), new_shape=[max_length+1, max_length+1]),
+                # TODO: check with training before max_length+1
+                tf.sparse_reset_shape(tf.string_split(y, ','), new_shape=[max_length, max_length]),
                 default_value="0"),
             x)
         return tf.string_to_number(t)
