@@ -37,21 +37,45 @@ ENCS_PLAIN_TEST_DATASETS = [
 ]
 
 
+ROOT_DUMMY = '<ROOT>|<ROOT>|<ROOT>|0|0|<ROOT>'
+
+
 class CzEngTokenTextEncoder(text_encoder.TokenTextEncoder):
     def __init__(self, vocab_filename, reverse=False, vocab_list=None, replace_oov=None,
-                 num_reserved_ids=text_encoder.NUM_RESERVED_TOKENS, format_index=0):
+                 num_reserved_ids=text_encoder.NUM_RESERVED_TOKENS, format_index=0, with_root=False):
         super(CzEngTokenTextEncoder, self).__init__(vocab_filename, reverse=reverse, vocab_list=vocab_list,
                                                     replace_oov=replace_oov, num_reserved_ids=num_reserved_ids)
         self.format_index = format_index
+        self.with_root = with_root
 
     def encode(self, sentence):
         """Converts an export format sentence to a list of ids."""
+        if self.with_root:
+            sentence = ROOT_DUMMY + ' ' + sentence
         tokens = [word.split('|')[self.format_index] for word in sentence.strip().split()]
         if self._replace_oov is not None:
             tokens = [t if t in self._token_to_id else self._replace_oov
                       for t in tokens]
         ret = [self._token_to_id[tok] for tok in tokens]
         return ret[::-1] if self._reverse else ret
+
+
+class CzEngTokenIntEncoder:
+    def __init__(self, format_index=4, dtype=int, reverse=False, with_root=False):
+        self._format_index = format_index
+        self._dtype = dtype
+        self._reverse = reverse
+        self._with_root = with_root
+
+    def encode(self, sentence):
+        """Converts an export format sentence to a list of ids."""
+        if self._with_root:
+            sentence = ROOT_DUMMY + ' ' + sentence
+        ret = [self._dtype(word.split('|')[self._format_index]) for word in sentence.strip().split()]
+        return ret[::-1] if self._reverse else ret
+
+    def decode(self, ids):
+        return " ".join([str(_id) for _id in ids])
 
 
 class CzEngRelativeTreeDistanceEncoder:

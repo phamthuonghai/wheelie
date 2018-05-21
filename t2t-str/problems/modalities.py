@@ -28,3 +28,12 @@ class RelativeTreeDistanceStrModality(modality.Modality):
                 default_value="0"),
             x)
         return tf.string_to_number(t)
+
+
+@registry.register_symbol_modality("dep_head")
+class DepHeadModality(modality.Modality):
+    def top(self, body_output, targets):
+        return body_output
+
+    def bottom(self, x):
+        return x
