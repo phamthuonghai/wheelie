@@ -13,6 +13,10 @@ __all__ = ["TransformerPosTagging"]
 
 @registry.register_model
 class TransformerPosTagging(transformer.Transformer):
+    @property
+    def second_goal(self):
+        return 'pos'
+
     def body(self, features):
         """Transformer main model_fn.
 
@@ -60,7 +64,7 @@ class TransformerPosTagging(transformer.Transformer):
 
         return {
             "targets": decoder_output,
-            "target_pos": self.tagging(encoder_output),
+            "target_" + self.second_goal: self.tagging(encoder_output),
         }
 
     def tagging(self, encoder_output):
@@ -318,12 +322,12 @@ class TransformerPosTagging(transformer.Transformer):
             else:
                 ret["outputs"] = ret["outputs"][:, :, partial_targets_length:]
 
-        target_pos_modality = self._problem_hparams.target_modality['target_pos']
+        target_pos_modality = self._problem_hparams.target_modality['target_' + self.second_goal]
         tagging_output = self.tagging(encoder_output)
-        with tf.variable_scope('target_pos/' + target_pos_modality.name):
+        with tf.variable_scope('target_' + self.second_goal + '/' + target_pos_modality.name):
             pos_logits = target_pos_modality.top_sharded(tagging_output, None, dp)[0]
             pos_ids = tf.argmax(pos_logits, axis=-1)
-            ret['output_pos'] = tf.squeeze(pos_ids, axis=-1)
+            ret['output_' + self.second_goal] = tf.squeeze(pos_ids, axis=-1)
 
         return ret
 
@@ -339,7 +343,8 @@ class TransformerPosTagging(transformer.Transformer):
             decode_length=decode_hparams.extra_length)
         outputs = infer_out["outputs"]
         scores = infer_out["scores"]
-        output_pos = infer_out["output_pos"]
+        lb_output_2nd = "output_" + self.second_goal
+        output_2nd_task = infer_out[lb_output_2nd]
 
         batched_problem_choice = (
                 features["problem_choice"] * tf.ones(
@@ -351,11 +356,11 @@ class TransformerPosTagging(transformer.Transformer):
             "targets": features.get("infer_targets"),
             "problem_choice": batched_problem_choice,
             "batch_prediction_key": features.get("batch_prediction_key"),
-            "output_pos": output_pos,
+            lb_output_2nd: output_2nd_task,
         }
         _del_dict_nones(predictions)
 
-        export_out = {"outputs": predictions["outputs"], "output_pos": predictions["output_pos"]}
+        export_out = {"outputs": predictions["outputs"], lb_output_2nd: predictions[lb_output_2nd]}
         if "scores" in predictions:
             export_out["scores"] = predictions["scores"]
 

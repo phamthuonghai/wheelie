@@ -108,3 +108,10 @@ def transformer_pos_tagging_1_head():
     hparams = transformer_base()
     hparams.tagging_num_heads = 1
     return hparams
+
+
+@registry.register_hparams
+def transformer_dep_parse_l5():
+    hparams = transformer_base()
+    hparams.parse_from_layer = 5
+    return hparams
