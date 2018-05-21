@@ -319,8 +319,9 @@ class TransformerPosTagging(transformer.Transformer):
                 ret["outputs"] = ret["outputs"][:, :, partial_targets_length:]
 
         target_pos_modality = self._problem_hparams.target_modality['target_pos']
+        tagging_output = self.tagging(encoder_output)
         with tf.variable_scope('target_pos/' + target_pos_modality.name):
-            pos_logits = target_pos_modality.top_sharded(encoder_output, None, dp)[0]
+            pos_logits = target_pos_modality.top_sharded(tagging_output, None, dp)[0]
             pos_ids = tf.argmax(pos_logits, axis=-1)
             ret['output_pos'] = tf.squeeze(pos_ids, axis=-1)
 
