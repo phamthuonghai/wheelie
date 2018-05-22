@@ -45,7 +45,7 @@ if __name__ == '__main__':
             predicted_tags = t[1].strip().split()
             # Remove <ROOT> and <EOS>
             if args.task == 'dep_head':
-                predicted_tags = predicted_tags[0:-2]
+                predicted_tags = predicted_tags[1:-1]
         gold_tags = [w.split('|')[info_id] for w in source_sentences[i].strip().split()]
         l_gold_tags = len(gold_tags)
         if len(predicted_tags) != l_gold_tags:
