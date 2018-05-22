@@ -1,5 +1,5 @@
 import argparse
-from sacrebleu import corpus_bleu, bleu_signature
+from sacrebleu import corpus_bleu
 
 
 if __name__ == '__main__':
@@ -7,6 +7,8 @@ if __name__ == '__main__':
     arg_parser.add_argument('decoded_file')
     arg_parser.add_argument('source_file')
     arg_parser.add_argument('target_file')
+    arg_parser.add_argument('--task', choices=['dep_head', 'pos_tag'], default='dep_head',
+                            help='the task you are evaluating')
 
     # From sacrebleu
     arg_parser.add_argument('-lc', action='store_true', default=False,
@@ -32,19 +34,28 @@ if __name__ == '__main__':
 
     decoded_sentences_split = []
     acc_total = 0
+    info_id = 2 if args.task == 'pos_tag' else 4
     for i in range(len(decoded_sentences)):
         t = decoded_sentences[i].split('\t')
         decoded_sentences_split.append(t[0].strip())
-        predicted_tags = t[1].strip().split()
-        gold_tags = [w.split('|')[2] for w in source_sentences[i].strip().split()]
+        if len(t) < 2:
+            print('Warning: Line %d: No predicted labels' % (i+1))
+            predicted_tags = []
+        else:
+            predicted_tags = t[1].strip().split()
+            # Remove <ROOT> and <EOS>
+            if args.task == 'dep_head':
+                predicted_tags = predicted_tags[0:-2]
+        gold_tags = [w.split('|')[info_id] for w in source_sentences[i].strip().split()]
         l_gold_tags = len(gold_tags)
         if len(predicted_tags) != l_gold_tags:
-            print('Warning: Predicted tags and gold tags length mismatched: %d vs %d' % (
-                len(predicted_tags), l_gold_tags))
-        acc = sum([1. if gold_tags[t] == predicted_tags[t] else 0. for t in range(l_gold_tags)]) / l_gold_tags
+            print('Warning: Line %d: Predicted and gold length mismatched: %d vs %d' % (
+                i+1, len(predicted_tags), l_gold_tags))
+        acc = sum([1. if gold_tags[t] == predicted_tags[t] else 0.
+                   for t in range(min(l_gold_tags, len(predicted_tags)))]) / l_gold_tags
         acc_total += acc
 
-    print('POS tagging accuracy: %.4f' % (acc_total * 100 / len(decoded_sentences)))
+    print('%s accuracy: %.4f' % (args.task.upper(), acc_total * 100 / len(decoded_sentences)))
 
     # BLEU
     bleu = corpus_bleu(decoded_sentences_split, [target_sentences], smooth=args.smooth, force=args.force,

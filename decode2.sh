@@ -38,4 +38,4 @@ t2t-decoder \
   --t2t_usr_dir=${USR_DIR}
 
 # Multi-task evaluation
-python ./scripts/multi_eval.py ${DECODE_TO_FILE} ${DECODE_SRC_FILE} ${DECODE_TGT_FILE}
+python ./scripts/multi_eval.py --task="pos_tag" ${DECODE_TO_FILE} ${DECODE_SRC_FILE} ${DECODE_TGT_FILE}
