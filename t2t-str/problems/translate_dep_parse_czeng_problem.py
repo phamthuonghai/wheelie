@@ -44,7 +44,7 @@ class TranslateDepParseCsenCzeng(translate_czeng_problem.TranslateCsenCzengPlain
         source_token = self.get_or_create_vocab(data_dir, tmp_dir, side=0)
         target_token = self.get_or_create_vocab(data_dir, tmp_dir, side=1)
         czeng_encoders = {
-            "target_dephead": data_utils.CzEngTokenIntEncoder(format_index=4),
+            "target_dephead": data_utils.CzEngTokenIntEncoder(format_index=4, with_root=True),
         }
         return data_utils.czeng_generate_encoded(generator, vocab=source_token, targets_vocab=target_token,
                                                  has_inputs=self.has_inputs, czeng_encoders=czeng_encoders)
