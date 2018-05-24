@@ -1,4 +1,6 @@
+import os
 import argparse
+
 from sacrebleu import corpus_bleu
 
 
@@ -24,11 +26,9 @@ if __name__ == '__main__':
 
     f_decoded = open(args.decoded_file, 'r', encoding='utf-8')
     f_source = open(args.source_file, 'r', encoding='utf-8')
-    f_target = open(args.target_file, 'r', encoding='utf-8')
 
     decoded_sentences = [s.strip() for s in list(f_decoded)]
     source_sentences = [s.strip() for s in list(f_source)]
-    target_sentences = [s.strip() for s in list(f_target)]
     if len(decoded_sentences) != len(source_sentences):
         raise Exception("Decoded file length mismatched!")
 
@@ -57,14 +57,21 @@ if __name__ == '__main__':
 
     print('%s accuracy: %.4f' % (args.task.upper(), acc_total * 100 / len(decoded_sentences)))
 
-    # BLEU
-    bleu = corpus_bleu(decoded_sentences_split, [target_sentences], smooth=args.smooth, force=args.force,
-                       lowercase=args.lc, tokenize=args.tokenize)
-    print(
-        'BLEU+ = {:.2f} {:.1f}/{:.1f}/{:.1f}/{:.1f} (BP = {:.3f} ratio = {:.3f} hyp_len = {:d} ref_len = {:d})'.format(
-            bleu.score, bleu.precisions[0], bleu.precisions[1], bleu.precisions[2],
-            bleu.precisions[3], bleu.bp, bleu.sys_len / bleu.ref_len, bleu.sys_len, bleu.ref_len))
-
     f_decoded.close()
     f_source.close()
-    f_target.close()
+
+    # BLEU
+
+    if os.path.exists(args.target_file):
+        f_target = open(args.target_file, 'r', encoding='utf-8')
+        target_sentences = [s.strip() for s in list(f_target)]
+        bleu = corpus_bleu(decoded_sentences_split, [target_sentences], smooth=args.smooth, force=args.force,
+                           lowercase=args.lc, tokenize=args.tokenize)
+        print(
+            'BLEU+ = {:.2f} {:.1f}/{:.1f}/{:.1f}/{:.1f} (BP = {:.3f} ratio = {:.3f} hyp_len = {:d} '
+            'ref_len = {:d})'.format(
+                bleu.score, bleu.precisions[0], bleu.precisions[1], bleu.precisions[2],
+                bleu.precisions[3], bleu.bp, bleu.sys_len / bleu.ref_len, bleu.sys_len, bleu.ref_len))
+        f_target.close()
+    else:
+        print('Info: No target file, BLEU ignored')
