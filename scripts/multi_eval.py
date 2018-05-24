@@ -49,8 +49,8 @@ if __name__ == '__main__':
         gold_tags = [w.split('|')[info_id] for w in source_sentences[i].strip().split()]
         l_gold_tags = len(gold_tags)
         if len(predicted_tags) != l_gold_tags:
-            print('Warning: Line %d: Predicted and gold length mismatched: %d vs %d' % (
-                i+1, len(predicted_tags), l_gold_tags))
+            print('Warning: Line %d: Predicted and gold length mismatched: %d %s %d' % (
+                i+1, len(predicted_tags), '<' if len(predicted_tags) != l_gold_tags else '>', l_gold_tags))
         acc = sum([1. if gold_tags[t] == predicted_tags[t] else 0.
                    for t in range(min(l_gold_tags, len(predicted_tags)))]) / l_gold_tags
         acc_total += acc
