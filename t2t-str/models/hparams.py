@@ -137,3 +137,17 @@ def transformer_dep_parse_l3():
     hparams = transformer_base()
     hparams.parse_from_layer = 3
     return hparams
+
+
+@registry.register_hparams
+def transformer_dep_parse_l1():
+    hparams = transformer_base()
+    hparams.parse_from_layer = 1
+    return hparams
+
+
+@registry.register_hparams
+def transformer_dep_parse_l2():
+    hparams = transformer_base()
+    hparams.parse_from_layer = 2
+    return hparams
