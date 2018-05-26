@@ -16,7 +16,7 @@ DATA_DIR=$HOME/data/${PROBLEM}
 TRAIN_DIR=$HOME/train_data/${PROBLEM}/${MODEL}-${HPARAMS}
 USR_DIR=$HOME/t2t-str
 
-echo $1-$2
+echo $1-$2-$3
 
 mkdir -p ${TMP_DIR} ${TRAIN_DIR}
 
@@ -39,26 +39,9 @@ t2t-trainer \
   --hparams_set=${HPARAMS} \
   --hparams='batch_size=3072' \
   --keep_checkpoint_max=1 \
+  --train_steps=${3} \
   --output_dir=${TRAIN_DIR} \
   --t2t_usr_dir=${USR_DIR}
 
-# Decode
-BEAM_SIZE=4
-ALPHA=0.6
-DECODE_SRC_FILE=${TMP_DIR}/data.export-format/09decode.cs
-DECODE_TGT_FILE=${TMP_DIR}/data.export-format/09decode.en
-DECODE_TO_FILE=${DATA_DIR}/${MODEL}-${HPARAMS}.en
-
-t2t-decoder \
-  --data_dir=${DATA_DIR} \
-  --problems=${PROBLEM} \
-  --model=${MODEL} \
-  --hparams_set=${HPARAMS} \
-  --output_dir=${TRAIN_DIR} \
-  --decode_hparams="beam_size=$BEAM_SIZE,alpha=$ALPHA,batch_size=4" \
-  --decode_from_file=${DECODE_SRC_FILE} \
-  --decode_to_file=${DECODE_TO_FILE} \
-  --t2t_usr_dir=${USR_DIR}
-
-# Evaluate the BLEU score
-cat ${DECODE_TO_FILE} | sacrebleu --tok none ${DECODE_TGT_FILE}
+./decode1.sh ${MODEL} ${HPARAMS} dev
+./decode1.sh ${MODEL} ${HPARAMS} test-10k

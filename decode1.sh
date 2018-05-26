@@ -9,8 +9,6 @@ PROBLEM=translate_csen_czeng
 MODEL=$1
 HPARAMS=$2
 
-echo $1-$2
-
 HOME=$(pwd)
 
 TMP_DIR=$HOME/data/tmp
@@ -21,9 +19,10 @@ USR_DIR=$HOME/t2t-str
 # Decode
 BEAM_SIZE=4
 ALPHA=0.6
-DECODE_SRC_FILE=${TMP_DIR}/data.export-format/09decode.cs
-DECODE_TGT_FILE=${TMP_DIR}/data.export-format/09decode.en
-DECODE_TO_FILE=${DATA_DIR}/${MODEL}-${HPARAMS}.en
+
+DECODE_SRC_FILE=${TMP_DIR}/data.export-format/09decode-${3}.cs
+DECODE_TGT_FILE=${TMP_DIR}/data.export-format/09decode-${3}.en
+DECODE_TO_FILE=${DATA_DIR}/${MODEL}-${HPARAMS}-${3}.en
 
 t2t-decoder \
   --data_dir=${DATA_DIR} \
@@ -38,3 +37,4 @@ t2t-decoder \
 
 # Evaluate the BLEU score
 cat ${DECODE_TO_FILE} | sacrebleu --tok none ${DECODE_TGT_FILE}
+echo ${1}-${2}-${3}

@@ -6,7 +6,7 @@ CSEN_DEP_TRAIN_DATASETS = [
 ]
 CSEN_DEP_TEST_DATASETS = [
     ["http://ufallab.ms.mff.cuni.cz/~bojar/czeng16-data/data-export-format.0.tar",
-     ("tsv", 2, 6, "data.export-format/*test")],
+     ("tsv", 2, 6, "data.export-format/*dev")],
 ]
 
 CSEN_PLAIN_TRAIN_DATASETS = [
@@ -15,7 +15,7 @@ CSEN_PLAIN_TRAIN_DATASETS = [
 ]
 CSEN_PLAIN_TEST_DATASETS = [
     ["http://ufallab.ms.mff.cuni.cz/~bojar/czeng16-data/data-plaintext-format.0.tar",
-     ("tsv", 2, 3, "data.plaintext-format/*test")],
+     ("tsv", 2, 3, "data.plaintext-format/*dev")],
 ]
 
 ENCS_DEP_TRAIN_DATASETS = [
@@ -24,7 +24,7 @@ ENCS_DEP_TRAIN_DATASETS = [
 ]
 ENCS_DEP_TEST_DATASETS = [
     ["http://ufallab.ms.mff.cuni.cz/~bojar/czeng16-data/data-export-format.0.tar",
-     ("tsv", 6, 2, "data.export-format/*test")],
+     ("tsv", 6, 2, "data.export-format/*dev")],
 ]
 
 ENCS_PLAIN_TRAIN_DATASETS = [
@@ -33,9 +33,8 @@ ENCS_PLAIN_TRAIN_DATASETS = [
 ]
 ENCS_PLAIN_TEST_DATASETS = [
     ["http://ufallab.ms.mff.cuni.cz/~bojar/czeng16-data/data-plaintext-format.0.tar",
-     ("tsv", 3, 2, "data.plaintext-format/*test")],
+     ("tsv", 3, 2, "data.plaintext-format/*dev")],
 ]
-
 
 ROOT_DUMMY = '<ROOT>|<ROOT>|<ROOT>|0|0|<ROOT>'
 
@@ -93,30 +92,30 @@ class CzEngRelativeTreeDistanceEncoder:
         l_s = len(sentence)
         head_ids = [-1] + [int(word[4]) for word in sentence]
 
-        neighbors = [[] for _ in range(l_s+1)]
+        neighbors = [[] for _ in range(l_s + 1)]
         for _id, head_id in enumerate(head_ids):
             if head_id >= 0:
                 neighbors[head_id].append(_id)
                 # head is also its neighbor
                 neighbors[_id].append(head_id)
 
-        visited = [False] * (l_s+1)
+        visited = [False] * (l_s + 1)
         ret = [['0' for _ in range(l_s)] for _ in range(l_s)]  # Remove ROOT
 
         # should be BFS, but this is tree, so basically no difference
         def dfs(root, cur_id, dep):
             if cur_id > 0:
-                ret[root-1][cur_id-1] = str(dep)
+                ret[root - 1][cur_id - 1] = str(dep)
             visited[cur_id] = True
             for neighbor in neighbors[cur_id]:
                 if not visited[neighbor]:
-                    dfs(root, neighbor, dep+1)
+                    dfs(root, neighbor, dep + 1)
 
-        for _id in range(1, l_s+1):
-            visited = [False] * (l_s+1)
+        for _id in range(1, l_s + 1):
+            visited = [False] * (l_s + 1)
             visited[_id] = True
             dfs(_id, _id, 1)
-            ret[_id-1] = ','.join(ret[_id-1])
+            ret[_id - 1] = ','.join(ret[_id - 1])
 
         return ret
 
@@ -132,14 +131,15 @@ def _generate_tree_traversal_code():
     # RD*  : right siblings then downs
     n = MAX_TRAVERSAL_LENGTH
     tree_traversal_code = ['L', 'R']
-    for i in range(n+1):
-        for j in range(i+1):
-            tree_traversal_code.append(('U' * j) + ('D' * (i-j)))
+    for i in range(n + 1):
+        for j in range(i + 1):
+            tree_traversal_code.append(('U' * j) + ('D' * (i - j)))
 
     ret = {}
     for _id, code in enumerate(tree_traversal_code):
         ret[code] = str(_id + 2)  # reserve 0 for padding, 1 for out-of-reach
     return ret
+
 
 TREE_TRAVERSAL_ID = _generate_tree_traversal_code()
 
@@ -159,7 +159,7 @@ class CzEngTreeTranversalStrEncoder:
         l_s = len(sentence)
         head_ids = [-1] + [int(word[4]) for word in sentence]
 
-        children = [[] for _ in range(l_s+1)]
+        children = [[] for _ in range(l_s + 1)]
         for _id, head_id in enumerate(head_ids):
             if head_id >= 0:
                 children[head_id].append(_id)
@@ -176,7 +176,7 @@ class CzEngTreeTranversalStrEncoder:
                 tmp_diary = diary
 
             if cur_id > 0:
-                ret[root-1][cur_id-1] = TREE_TRAVERSAL_ID.get(tmp_diary, OUT_OF_REACH_ID)
+                ret[root - 1][cur_id - 1] = TREE_TRAVERSAL_ID.get(tmp_diary, OUT_OF_REACH_ID)
 
             if len(diary) >= MAX_TRAVERSAL_LENGTH:
                 return
@@ -188,11 +188,11 @@ class CzEngTreeTranversalStrEncoder:
                 if not visited[neighbor]:
                     dfs(root, neighbor, diary + 'D')
 
-        for _id in range(1, l_s+1):
+        for _id in range(1, l_s + 1):
             visited = [False] * (l_s + 1)
             visited[_id] = True
             dfs(_id, _id, '')
-            ret[_id-1] = ','.join(ret[_id-1])
+            ret[_id - 1] = ','.join(ret[_id - 1])
 
         return ret
 
