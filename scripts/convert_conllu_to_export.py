@@ -1,6 +1,8 @@
 import argparse
 import io
 
+import tqdm
+
 '''
 EXPORT FORMAT
     Czech a-layer (surface-syntactic tree) in factored form:
@@ -20,17 +22,16 @@ COL_NAMES = u"ID,FORM,LEMMA,UPOSTAG,XPOSTAG,FEATS,HEAD,DEPREL,DEPS,MISC".split(u
 
 def from_file(file_path):
     """ Parse data from CoNLL-U format file """
-    ret = []
     with io.open(file_path, 'r', encoding='utf-8') as f:
         sent_id = ''
         tmp_cont = []
 
-        for line in f:
+        for line in tqdm.tqdm(f):
             line = line.strip()
 
             if len(line) == 0:
                 if len(tmp_cont) > 1:
-                    ret.append((sent_id, tmp_cont))
+                    yield (sent_id, tmp_cont)
                     tmp_cont = []
 
             elif line[0].isdigit():
@@ -47,9 +48,7 @@ def from_file(file_path):
                     sent_id = data_line[-1]
 
     if len(tmp_cont) > 1:
-        ret.append((sent_id, tmp_cont))
-
-    return ret
+        yield (sent_id, tmp_cont)
 
 
 if __name__ == '__main__':
