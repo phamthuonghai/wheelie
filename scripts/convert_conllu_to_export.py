@@ -30,11 +30,9 @@ def from_file(file_path):
             line = line.strip()
 
             if len(line) == 0:
-                if len(tmp_cont) > 1:
-                    yield (sent_id, tmp_cont)
-                    tmp_cont = []
+                continue
 
-            elif line[0].isdigit():
+            if line[0].isdigit():
                 data_line = line.split('\t')
 
                 if len(data_line) != COL_COUNT:
@@ -45,6 +43,9 @@ def from_file(file_path):
             else:
                 data_line = line.split()
                 if len(data_line) == 4 and data_line[1] == 'sent_id':
+                    if len(tmp_cont) > 0:
+                        yield (sent_id, tmp_cont)
+                        tmp_cont = []
                     sent_id = data_line[-1]
 
     if len(tmp_cont) > 1:
@@ -62,6 +63,8 @@ if __name__ == '__main__':
 
     output_file = open(args.output_file, 'w', encoding='utf8')
 
+    cnt = 0
+
     for _id, sentence in conllu_data:
         output = []
         for word in sentence:
@@ -73,5 +76,7 @@ if __name__ == '__main__':
             if word[ID].isnumeric():
                 output.append('|'.join([word[FORM], word[LEMMA], word[XPOSTAG], word[ID], word[HEAD], '_']))
         output_file.write(' '.join(output) + '\n')
+        cnt += 1
 
+    print('\nParsed %d sentences' % cnt)
     output_file.close()
