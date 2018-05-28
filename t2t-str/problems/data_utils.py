@@ -70,7 +70,14 @@ class CzEngTokenIntEncoder:
         """Converts an export format sentence to a list of ids."""
         if self._with_root:
             sentence = ROOT_DUMMY + ' ' + sentence
-        ret = [self._dtype(word.split('|')[self._format_index]) for word in sentence.strip().split()]
+        ret = []
+        for word in sentence.strip().split():
+            w_split = word.split('|')
+            if len(w_split) != 6:
+                # print('CzEngTokenIntEncoder: word %s has %d factors' % (word, len(w_split)))
+                ret.append(self._dtype(w_split[self._format_index-6]))
+            else:
+                ret.append(self._dtype(w_split[self._format_index]))
         return ret[::-1] if self._reverse else ret
 
     def decode(self, ids):
