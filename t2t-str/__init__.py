@@ -8,4 +8,5 @@ from .models.hparams import *
 from .problems.translate_czeng_problem import *
 from .problems.translate_pos_tagging_czeng_problem import *
 from .problems.translate_dep_parse_czeng_problem import *
+from .problems.translate_decs_problem import *
 from .problems.modalities import *
