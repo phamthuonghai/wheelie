@@ -44,7 +44,7 @@ class TranslateDecs(translate_czeng_problem.TranslateCsenCzengPlain):
 
     def generate_samples(self, data_dir, tmp_dir, dataset_split):
         tag = "train" if dataset_split == problem.DatasetSplit.TRAIN else "dev"
-        data_path = os.path.join(tmp_dir, "translate_decs-compiled-%s" % tag)
+        data_path = os.path.join(tmp_dir, "%s-compiled-%s" % (self.name, tag))
 
         if self.vocab_type == text_problems.VocabType.SUBWORD:
           generator_utils.get_or_generate_vocab(
@@ -57,8 +57,8 @@ class TranslateDecs(translate_czeng_problem.TranslateCsenCzengPlain):
     def vocab_data_files(self):
         vocab_datasets = [[
             'decs', [
-                "translate_decs-compiled-train.lang1",
-                "translate_decs-compiled-train.lang2"
+                "%s-compiled-train.lang1" % self.name,
+                "%s-compiled-train.lang2" % self.name
             ]
         ]]
         return vocab_datasets
@@ -103,3 +103,10 @@ class TranslateDepParseDecs(translate_dep_parse_czeng_problem.TranslateDepParseC
             ]
         ]]
         return vocab_datasets
+
+
+@registry.register_problem
+class TranslateDecsAlt(TranslateDecs):
+    @property
+    def approx_vocab_size(self):
+        return 100000

@@ -5,8 +5,7 @@
 #$ -j y
 #$ -S /bin/bash
 
-PROBLEM=translate_dep_parse_decs
-PROBLEM_TRAIN_DIR=translate_decs
+PROBLEM=translate_decs_alt
 MODEL=$1
 HPARAMS=$2
 
@@ -14,7 +13,7 @@ HOME=$(pwd)
 
 TMP_DIR=$HOME/data/tmp
 DATA_DIR=$HOME/data/${PROBLEM}
-TRAIN_DIR=$HOME/train_data/${PROBLEM_TRAIN_DIR}/${MODEL}-${HPARAMS}
+TRAIN_DIR=$HOME/train_data/${PROBLEM}/${MODEL}-${HPARAMS}
 USR_DIR=$HOME/t2t-str
 
 echo $1-$2-$3
@@ -40,10 +39,9 @@ t2t-trainer \
   --hparams_set=${HPARAMS} \
   --hparams='batch_size=3072' \
   --keep_checkpoint_max=1 \
-  --local_eval_frequency=5000 \
   --train_steps=${3} \
   --output_dir=${TRAIN_DIR} \
   --t2t_usr_dir=${USR_DIR}
 
-./decs_decode_3.sh ${MODEL} ${HPARAMS} dev
-./decs_decode_3.sh ${MODEL} ${HPARAMS} test
+./decs_decode_4.sh ${MODEL} ${HPARAMS} dev
+./decs_decode_4.sh ${MODEL} ${HPARAMS} test
