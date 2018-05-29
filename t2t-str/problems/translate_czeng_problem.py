@@ -6,7 +6,7 @@ import operator
 import os
 from collections import defaultdict
 
-from tensor2tensor.data_generators import text_encoder
+from tensor2tensor.data_generators import text_encoder, text_problems, generator_utils
 from tensor2tensor.data_generators import problem
 from tensor2tensor.data_generators import translate_encs
 from tensor2tensor.data_generators.text_problems import VocabType, text2text_generate_encoded
@@ -219,3 +219,35 @@ class TranslateCsenCzeng(TranslateCsenCzengPlain):
                 p.input_modality["inputs_position"] = identity
             p.input_modality["targets_segmentation"] = identity
             p.input_modality["targets_position"] = identity
+
+
+@registry.register_problem
+class TranslateCsenCzengAlt(TranslateCsenCzengPlain):
+    @property
+    def approx_vocab_size(self):
+        return 100000
+
+    def source_data_files(self, dataset_split):
+        # Use scripts/prepare_csen_czeng_alt.py to compile your own data
+        return None
+
+    def generate_samples(self, data_dir, tmp_dir, dataset_split):
+        tag = "train" if dataset_split == problem.DatasetSplit.TRAIN else "dev"
+        data_path = os.path.join(tmp_dir, "%s-compiled-%s" % (self.name, tag))
+
+        if self.vocab_type == text_problems.VocabType.SUBWORD:
+          generator_utils.get_or_generate_vocab(
+              data_dir, tmp_dir, self.vocab_filename, self.approx_vocab_size,
+              self.vocab_data_files())
+
+        return text_problems.text2text_txt_iterator(data_path + ".lang1",
+                                                    data_path + ".lang2")
+
+    def vocab_data_files(self):
+        vocab_datasets = [[
+            'decs', [
+                "%s-compiled-train.lang1" % self.name,
+                "%s-compiled-train.lang2" % self.name
+            ]
+        ]]
+        return vocab_datasets
