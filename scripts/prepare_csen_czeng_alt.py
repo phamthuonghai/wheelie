@@ -49,7 +49,7 @@ def get_word(sentence):
     return ' '.join(ret)
 
 
-def process_data(src_tok, tgt_tok, output, output_2=None):
+def process_data(src_tok, tgt_tok, output, output_2=None, is_dev=False):
     src_ret = read_file(src_tok)
     tgt_ret = read_file(tgt_tok)
 
@@ -77,7 +77,7 @@ def process_data(src_tok, tgt_tok, output, output_2=None):
                 f.write(src_ret[i] + ' ' + DEPPARSE_WORD + '\n')
         with open(output_2, 'w', encoding='utf-8') as f:
             for i in range(len(tgt_ret)):
-                f.write(tgt_ret[i] + '\n')
+                f.write((get_head(tgt_ret[i]) if is_dev else tgt_ret[i]) + '\n')
                 f.write(get_head(src_ret[i]) + '\n')
 
 
@@ -103,5 +103,5 @@ if __name__ == '__main__':
 
     process_data(train_source, train_target, output=output_train)
     process_data(dev_source, dev_target, output=output_dev)
-    process_data(dev_source, dev_target, output=output_dev_src, output_2=output_dev_tgt)
+    process_data(dev_source, dev_target, output=output_dev_src, output_2=output_dev_tgt, is_dev=True)
     process_data(test_source, test_target, output=output_test_src, output_2=output_test_tgt)
