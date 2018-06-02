@@ -74,7 +74,7 @@ if __name__ == '__main__':
 
             # word-form|lemma|morphological-tag|index-in-sentence|index-of-governor|syntactic-function
             if word[ID].isnumeric():
-                output.append('|'.join([word[FORM], word[LEMMA], word[XPOSTAG], word[ID], word[HEAD], '_']))
+                output.append('|'.join([word[FORM], word[LEMMA], word[XPOSTAG], word[ID], word[HEAD], word[DEPREL]]))
         output_file.write(' '.join(output) + '\n')
         cnt += 1
 
