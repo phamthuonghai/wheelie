@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#$ -q gpu.q
+#$ -q gpu-ms.q
 #$ -l gpu=1,gpu_cc_min6.1=1,gpu_ram=8G
 #$ -cwd
 #$ -j y
@@ -35,6 +35,6 @@ t2t-decoder \
   --decode_to_file=${DECODE_TO_FILE} \
   --t2t_usr_dir=${USR_DIR}
 
-# Evaluate the BLEU score
-cat ${DECODE_TO_FILE} | sacrebleu --tok none ${DECODE_TGT_FILE}
+# Evaluation
+python ./scripts/alt_eval.py ${DECODE_TO_FILE} ${DECODE_SRC_FILE} ${DECODE_TGT_FILE}
 echo ${1}-${2}-${3}

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#$ -q gpu.q
+#$ -q gpu-ms.q
 #$ -l gpu=1,gpu_cc_min6.1=1,gpu_ram=8G
 #$ -cwd
 #$ -j y
@@ -20,8 +20,8 @@ USR_DIR=$HOME/t2t-str
 BEAM_SIZE=4
 ALPHA=0.6
 
-DECODE_SRC_FILE=${TMP_DIR}/data.export-format/09decode-alt-${3}.cs
-DECODE_TGT_FILE=${TMP_DIR}/data.export-format/09decode-alt-${3}.en
+DECODE_SRC_FILE=${TMP_DIR}/data.export-format/decode-alt-${3}.cs
+DECODE_TGT_FILE=${TMP_DIR}/data.export-format/decode-alt-${3}.en
 DECODE_TO_FILE=${DATA_DIR}/${MODEL}-${HPARAMS}-${3}.en
 
 t2t-decoder \
@@ -35,6 +35,6 @@ t2t-decoder \
   --decode_to_file=${DECODE_TO_FILE} \
   --t2t_usr_dir=${USR_DIR}
 
-# Evaluate the BLEU score
-cat ${DECODE_TO_FILE} | sacrebleu --tok none ${DECODE_TGT_FILE}
+# Evaluation
+python ./scripts/alt_eval.py ${DECODE_TO_FILE} ${DECODE_SRC_FILE} ${DECODE_TGT_FILE}
 echo ${1}-${2}-${3}

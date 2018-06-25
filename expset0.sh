@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#$ -q gpu.q
+#$ -q gpu-ms.q
 #$ -l gpu=1,gpu_cc_min6.1=1,gpu_ram=8G
 #$ -cwd
 #$ -j y
