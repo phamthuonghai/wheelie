@@ -9,7 +9,7 @@ if __name__ == '__main__':
     arg_parser.add_argument('decoded_file')
     arg_parser.add_argument('source_file')
     arg_parser.add_argument('target_file')
-    arg_parser.add_argument('--task', choices=['dep_head', 'pos_tag'], default='dep_head',
+    arg_parser.add_argument('--task', choices=['dep_head', 'pos_tag', 'mono_head'], default='dep_head',
                             help='the task you are evaluating')
 
     # From sacrebleu
@@ -34,7 +34,16 @@ if __name__ == '__main__':
 
     decoded_sentences_split = []
     acc_total = 0
-    info_id = 2 if args.task == 'pos_tag' else 4
+
+    offset = 0
+    if args.task == 'pos_tag':
+        info_id = 2
+    elif args.task == 'dep_head':
+        info_id = 4
+    else:
+        info_id = 3
+        offset = -2
+
     for i in range(len(decoded_sentences)):
         t = decoded_sentences[i].split('\t')
         decoded_sentences_split.append(t[0].strip())
@@ -46,7 +55,13 @@ if __name__ == '__main__':
             # Remove <ROOT> and <EOS>
             if args.task == 'dep_head':
                 predicted_tags = predicted_tags[1:-1]
+            elif args.task == 'mono_head':
+                predicted_tags = predicted_tags[:-1]
         gold_tags = [w.split('|')[info_id] for w in source_sentences[i].strip().split()]
+
+        if args.task == 'mono_head':
+            gold_tags = [str(max(0, int(tag)+offset)) for tag in gold_tags]
+
         l_gold_tags = len(gold_tags)
         if len(predicted_tags) != l_gold_tags:
             print('Warning: Line %d: Predicted and gold length mismatched: %d %s %d' % (

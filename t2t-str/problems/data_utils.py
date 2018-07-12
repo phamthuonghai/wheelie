@@ -60,24 +60,26 @@ class CzEngTokenTextEncoder(text_encoder.TokenTextEncoder):
 
 
 class CzEngTokenIntEncoder:
-    def __init__(self, format_index=4, dtype=int, reverse=False, with_root=False):
+    def __init__(self, format_index=4, dtype=int, reverse=False, with_root=False, offset=0):
         self._format_index = format_index
         self._dtype = dtype
         self._reverse = reverse
         self._with_root = with_root
+        self._offset = offset
 
     def encode(self, sentence):
         """Converts an export format sentence to a list of ids."""
         if self._with_root:
             sentence = ROOT_DUMMY + ' ' + sentence
         ret = []
+        _zero = self._dtype(0)
         for word in sentence.strip().split():
             w_split = word.split('|')
             if len(w_split) != 6:
                 # print('CzEngTokenIntEncoder: word %s has %d factors' % (word, len(w_split)))
-                ret.append(self._dtype(w_split[self._format_index-6]))
+                ret.append(max(_zero, self._dtype(w_split[self._format_index-6])+self._offset))
             else:
-                ret.append(self._dtype(w_split[self._format_index]))
+                ret.append(max(_zero, self._dtype(w_split[self._format_index])+self._offset))
         return ret[::-1] if self._reverse else ret
 
     def decode(self, ids):
