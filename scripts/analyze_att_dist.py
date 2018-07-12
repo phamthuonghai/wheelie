@@ -1,18 +1,22 @@
 import os
+import pickle
 
 import numpy as np
 import tensorflow as tf
-from tensor2tensor.utils import usr_dir
-import matplotlib.pyplot as plt
 import tqdm
-import pickle
+from tensor2tensor.utils import usr_dir
+import matplotlib
+import matplotlib.pyplot as plt
+from matplotlib.colors import CSS4_COLORS
 
 from utils.visualization import visualization, attention
+
+matplotlib.rcParams.update({'font.size': 12})
 
 # HOME_DIR = '/net/me/merkur3/pham/depatt'
 HOME_DIR = '/home/phamthuonghai/Workspace/wheelie'
 usr_dir.import_usr_dir(os.path.join(HOME_DIR, 't2t-str'))
-MODEL_NAMES = ['Transformer base'] + ['Parse from layer %d' % i for i in range(6)]
+MODEL_NAMES = ['Transformer\nbase'] + ['on layer %d' % i for i in range(6)]
 MODEL_IDS = ['transformer_base'] + ['transformer_dep_parse_l%d' % i for i in range(6)]
 TEST_FILE = os.path.join(HOME_DIR, 'data/tmp/data.export-format/09decode-test-1k.cs')
 LIMIT = 100
@@ -52,11 +56,11 @@ def get_att_mat(problem_name, model_name, hparams_set, input_sentences):
 
 if __name__ == '__main__':
 
-    att_mat_file = 'att_mat_%d.pkl' % LIMIT
+    att_mat_file = './data/att_mat_%d.pkl' % LIMIT
 
     if os.path.exists(att_mat_file):
         with open(att_mat_file, 'rb') as f:
-            att_mat = pickle.load(f)
+            att = pickle.load(f)
     else:
         with open(TEST_FILE, 'r', encoding='utf-8') as f:
             inp_sentences = [line.strip() for line in f][:LIMIT]
@@ -76,7 +80,7 @@ if __name__ == '__main__':
     cols = ['{}'.format(col) for col in MODEL_NAMES]
     rows = ['Layer {}'.format(row) for row in range(6)]
 
-    fig, axes = plt.subplots(nrows=6, ncols=len(MODEL_NAMES), figsize=(12, 6))
+    fig, axes = plt.subplots(nrows=6, ncols=len(MODEL_NAMES), figsize=(12, 8))
 
     for ax, col in zip(axes[0, :], cols):
         ax.set_title(col)
@@ -87,20 +91,25 @@ if __name__ == '__main__':
     for m_id, m_names in enumerate(MODEL_IDS):
         for l_id in range(6):
             ax = axes[l_id, m_id]
-            ax.hist(np.reshape(att[m_names][l_id], [-1]), bins=9, range=(0.1, 1))
+            ax.hist(np.reshape(att[m_names][l_id], [-1]), bins=9, range=(0.1, 1),density=True,
+                    color=CSS4_COLORS['sandybrown'] if l_id+1 == m_id else CSS4_COLORS['deepskyblue'])
+            ax.set_ylim([0, 10])
 
+    fig.text(0.6, 0.997, 'Syntax demanded from head', va='top', ha='center', size=14)
     fig.tight_layout()
     plt.savefig("att_dist.pdf")
     plt.show()
 
-    fig, axes = plt.subplots(nrows=1, ncols=8, figsize=(16, 2))
+    fig, axes = plt.subplots(nrows=1, ncols=8, figsize=(12, 1.6))
 
     for _id, ax in enumerate(axes):
         ax.set_title('Head #%d' % _id)
 
     for h_id in range(8):
         ax = axes[h_id]
-        ax.hist(np.reshape(att['transformer_dep_parse_l4'][4][h_id], [-1]), bins=9, range=(0.1, 1))
+        ax.hist(np.reshape(att['transformer_dep_parse_l4'][4][h_id], [-1]), bins=9, range=(0.1, 1),
+                density=True, color=CSS4_COLORS['sandybrown'])
+        ax.set_ylim([0, 10])
 
     fig.tight_layout()
     plt.savefig("att_dist_4.pdf")
