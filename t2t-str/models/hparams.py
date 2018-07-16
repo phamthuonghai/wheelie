@@ -69,6 +69,14 @@ def transformer_relative_tree_5_absseq():
 
 
 @registry.register_hparams
+def transformer_relative_tree_20_absseq():
+    """Use tree relative position embeddings with absolute sequential position encodings."""
+    hparams = transformer_relative_tree_20()
+    hparams.pos = 'timing'
+    return hparams
+
+
+@registry.register_hparams
 def transformer_relative_tree_5_seq():
     """Use tree+sequential relative position embeddings instead of absolute sequential position encodings."""
     hparams = transformer_relative_tree_20_seq()
@@ -108,6 +116,13 @@ def transformer_reserved_deprel():
 def transformer_relative_reserved_pos():
     hparams = transformer_relative()
     hparams.pos_head = True
+    return hparams
+
+
+@registry.register_hparams
+def transformer_relative_reserved_deprel():
+    hparams = transformer_relative()
+    hparams.deprel_head = True
     return hparams
 
 
