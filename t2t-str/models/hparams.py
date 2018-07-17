@@ -33,6 +33,14 @@ def transformer_relative_tree_traversal_seq():
 
 
 @registry.register_hparams
+def transformer_relative_tree_traversal_absseq():
+    """Use tree relative traversal embeddings with absolute sequential position encodings."""
+    hparams = transformer_relative_tree_traversal()
+    hparams.pos = 'timing'
+    return hparams
+
+
+@registry.register_hparams
 def transformer_relative_tree_20():
     """Use tree relative position embeddings instead of relative/absolute sequential position encodings."""
     hparams = transformer_relative()
