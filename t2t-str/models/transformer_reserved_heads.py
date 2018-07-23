@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 import tensorflow as tf
 from tensor2tensor.layers import common_layers, common_attention
 from tensor2tensor.models.transformer import transformer_ffn_layer
@@ -30,12 +32,12 @@ class TransformerReservedHeads(transformer.Transformer):
         """
         inputs = common_layers.flatten4d3d(inputs)
 
-        other_heads = []
-        if hasattr(hparams, 'pos_head') and hparams.pos_head:
-            other_heads.append(common_layers.flatten4d3d(features['pos']))
+        other_heads = defaultdict(list)
+        if hasattr(hparams, 'pos_head'):
+            other_heads[hparams.pos_head].append(common_layers.flatten4d3d(features['pos']))
 
-        if hasattr(hparams, 'deprel_head') and hparams.deprel_head:
-            other_heads.append(common_layers.flatten4d3d(features['deprel']))
+        if hasattr(hparams, 'deprel_head'):
+            other_heads[hparams.deprel_head].append(common_layers.flatten4d3d(features['deprel']))
 
         encoder_input, self_attention_bias, encoder_decoder_attention_bias = (
             transformer.transformer_prepare_encoder(
@@ -61,10 +63,10 @@ class TransformerReservedHeads(transformer.Transformer):
                 inputs = inputs_modality.bottom(inputs)
             return inputs
 
-        if hasattr(hparams, 'pos_head') and hparams.pos_head:
+        if hasattr(hparams, 'pos_head'):
             features['pos'] = _transform_in_decode(features['pos'], 'pos')
 
-        if hasattr(hparams, 'deprel_head') and hparams.deprel_head:
+        if hasattr(hparams, 'deprel_head'):
             features['deprel'] = _transform_in_decode(features['deprel'], 'deprel')
 
         return super(TransformerReservedHeads, self)._fast_decode(features, decode_length, beam_size, top_beams, alpha)
@@ -81,21 +83,25 @@ def transformer_encoder(encoder_input,
     """A stack of transformer layers.
 
       Args:
-        encoder_input: a Tensor
-        encoder_self_attention_bias: bias Tensor for self-attention
+        :param encoder_input: a Tensor
+        :param encoder_self_attention_bias: bias Tensor for self-attention
            (see common_attention.attention_bias())
-        hparams: hyperparameters for model
-        name: a string
-        nonpadding: optional Tensor with shape [batch_size, encoder_length]
+        :param hparams: hyperparameters for model
+        :param name: a string
+        :param nonpadding: optional Tensor with shape [batch_size, encoder_length]
           indicating what positions are not padding.  This must either be
           passed in, which we do for "packed" datasets, or inferred from
           encoder_self_attention_bias.  The knowledge about padding is used
           for pad_remover(efficiency) and to mask out padding in convoltutional
           layers.
-        save_weights_to: an optional dictionary to capture attention weights
+        :param save_weights_to: an optional dictionary to capture attention weights
           for vizualization; the weights tensor will be appended there under
           a string key created from the variable scope (including name).
-        make_image_summary: Whether to make an attention image summary.
+        :param make_image_summary: Whether to make an attention image summary.
+        :param other_heads: {0: [pos_head, dep_head...], // other heads on layer 0
+                             1: [...]                    // other heads on layer 1
+                             ...
+                            }
 
       Returns:
         y: a Tensors
@@ -117,7 +123,7 @@ def transformer_encoder(encoder_input,
         for layer in range(hparams.num_encoder_layers or hparams.num_hidden_layers):
             with tf.variable_scope("layer_%d" % layer):
                 with tf.variable_scope("self_attention"):
-                    if layer == 0 and other_heads is not None and len(other_heads) > 0:
+                    if other_heads is not None and len(other_heads[layer]) > 0:
                         y = multihead_attention_with_reserved_heads(
                             common_layers.layer_preprocess(x, hparams),
                             None,
@@ -127,7 +133,7 @@ def transformer_encoder(encoder_input,
                             hparams.hidden_size,
                             hparams.num_heads,
                             hparams.attention_dropout,
-                            other_heads,
+                            other_heads[layer],
                             attention_type=hparams.self_attention_type,
                             save_weights_to=save_weights_to,
                             max_relative_position=hparams.max_relative_position,

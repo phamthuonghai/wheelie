@@ -109,28 +109,73 @@ def transformer_enhanced_deprel():
 @registry.register_hparams
 def transformer_reserved_pos():
     hparams = transformer_base()
-    hparams.pos_head = True
+    hparams.pos_head = 0
     return hparams
 
 
 @registry.register_hparams
 def transformer_reserved_deprel():
     hparams = transformer_base()
-    hparams.deprel_head = True
+    hparams.deprel_head = 0
+    return hparams
+
+
+@registry.register_hparams
+def transformer_reserved_deprel_1():
+    hparams = transformer_base()
+    hparams.input_modalities = "inputs:symbol:default;deprel:symbol:default"
+    hparams.remove_redundant_modalities = True
+    hparams.deprel_head = 1
+    return hparams
+
+
+@registry.register_hparams
+def transformer_reserved_deprel_2():
+    hparams = transformer_base()
+    hparams.input_modalities = "inputs:symbol:default;deprel:symbol:default"
+    hparams.remove_redundant_modalities = True
+    hparams.deprel_head = 2
+    return hparams
+
+
+@registry.register_hparams
+def transformer_reserved_deprel_3():
+    hparams = transformer_base()
+    hparams.input_modalities = "inputs:symbol:default;deprel:symbol:default"
+    hparams.remove_redundant_modalities = True
+    hparams.deprel_head = 3
+    return hparams
+
+
+@registry.register_hparams
+def transformer_reserved_deprel_4():
+    hparams = transformer_base()
+    hparams.input_modalities = "inputs:symbol:default;deprel:symbol:default"
+    hparams.remove_redundant_modalities = True
+    hparams.deprel_head = 4
+    return hparams
+
+
+@registry.register_hparams
+def transformer_reserved_deprel_5():
+    hparams = transformer_base()
+    hparams.input_modalities = "inputs:symbol:default;deprel:symbol:default"
+    hparams.remove_redundant_modalities = True
+    hparams.deprel_head = 5
     return hparams
 
 
 @registry.register_hparams
 def transformer_relative_reserved_pos():
     hparams = transformer_relative()
-    hparams.pos_head = True
+    hparams.pos_head = 0
     return hparams
 
 
 @registry.register_hparams
 def transformer_relative_reserved_deprel():
     hparams = transformer_relative()
-    hparams.deprel_head = True
+    hparams.deprel_head = 0
     return hparams
 
 
