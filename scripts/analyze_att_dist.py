@@ -95,7 +95,7 @@ if __name__ == '__main__':
                     color=CSS4_COLORS['sandybrown'] if l_id+1 == m_id else CSS4_COLORS['deepskyblue'])
             ax.set_ylim([0, 10])
 
-    fig.text(0.6, 0.997, 'Syntax demanded from head', va='top', ha='center', size=14)
+    fig.text(0.6, 0.975, 'Syntax demanded from head', va='top', ha='center', size=14)
     fig.tight_layout()
     plt.savefig("att_dist.pdf")
     plt.show()
